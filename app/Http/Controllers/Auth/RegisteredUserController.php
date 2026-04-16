@@ -16,20 +16,26 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(Request $request): Response
     {
-        return view('auth.register', [
+        $selectedRole = $request->string('role')->toString();
+
+        return Inertia::render('Auth/Register', [
             'roles' => Role::query()
                 ->whereIn('slug', Role::publicRegistrationSlugs())
                 ->orderBy('name')
-                ->get(),
+                ->get(['id', 'name', 'slug']),
+            'selectedRole' => in_array($selectedRole, Role::publicRegistrationSlugs(), true)
+                ? $selectedRole
+                : '',
         ]);
     }
 
