@@ -69,4 +69,33 @@ class User extends Authenticatable
     {
         return $this->role?->slug === Role::ADMIN;
     }
+
+    public function isTransporter(): bool
+    {
+        return $this->role?->slug === Role::TRANSPORTER;
+    }
+
+    public function isProducer(): bool
+    {
+        return $this->role?->slug === Role::PRODUCER;
+    }
+
+    public function homeRouteName(): string
+    {
+        return match ($this->role?->slug) {
+            Role::TRANSPORTER => 'transporter.dashboard',
+            Role::PRODUCER => 'producer.dashboard',
+            Role::ADMIN => 'admin.dashboard',
+            default => 'dashboard',
+        };
+    }
+
+    public function routesRouteName(): ?string
+    {
+        return match ($this->role?->slug) {
+            Role::TRANSPORTER => 'transporter.routes.index',
+            Role::PRODUCER => 'producer.routes.index',
+            default => null,
+        };
+    }
 }

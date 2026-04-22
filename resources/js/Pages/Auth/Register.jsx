@@ -24,10 +24,29 @@ export default function Register({ roles, selectedRole }) {
     };
 
     return (
-        <GuestLayout>
+        <GuestLayout
+            title="Crea tu cuenta y entra al flujo de Flety"
+            description="Registra tu perfil como transportista o productor para empezar a publicar rutas o solicitar capacidad de carga."
+            eyebrow="Registro"
+            asideTitle="Un acceso bien creado simplifica toda la operacion posterior"
+            asideDescription="Desde aqui definimos el rol que determina la experiencia dentro del sistema y las acciones permitidas."
+            imageSrc="/assets/landing/transportador.png"
+            imageAlt="Transportador de Flety"
+            footer={
+                <span>
+                    ¿Ya tienes una cuenta?{' '}
+                    <Link
+                        href={route('login')}
+                        className="font-semibold text-emerald-700 transition hover:text-emerald-600"
+                    >
+                        Inicia sesion aqui
+                    </Link>
+                </span>
+            }
+        >
             <Head title="Crear cuenta" />
 
-            <form onSubmit={submit}>
+            <form onSubmit={submit} className="space-y-5">
                 <div>
                     <InputLabel htmlFor="name" value="Nombre completo" />
 
@@ -35,9 +54,10 @@ export default function Register({ roles, selectedRole }) {
                         id="name"
                         name="name"
                         value={data.name}
-                        className="mt-1 block w-full"
+                        className="mt-2 block w-full"
                         autoComplete="name"
                         isFocused={true}
+                        placeholder="Escribe tu nombre completo"
                         onChange={(e) => setData('name', e.target.value)}
                         required
                     />
@@ -53,8 +73,9 @@ export default function Register({ roles, selectedRole }) {
                         type="email"
                         name="email"
                         value={data.email}
-                        className="mt-1 block w-full"
+                        className="mt-2 block w-full"
                         autoComplete="username"
+                        placeholder="nombre@correo.com"
                         onChange={(e) => setData('email', e.target.value)}
                         required
                     />
@@ -70,8 +91,9 @@ export default function Register({ roles, selectedRole }) {
                         type="text"
                         name="phone"
                         value={data.phone}
-                        className="mt-1 block w-full"
+                        className="mt-2 block w-full"
                         autoComplete="tel"
+                        placeholder="3001234567"
                         onChange={(e) => setData('phone', e.target.value)}
                         required
                     />
@@ -86,7 +108,7 @@ export default function Register({ roles, selectedRole }) {
                         id="role"
                         name="role"
                         value={data.role}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-600 focus:ring-emerald-600"
+                        className="mt-2 block w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-slate-900 shadow-sm transition focus:border-emerald-500 focus:bg-white focus:ring-emerald-500"
                         onChange={(e) => setData('role', e.target.value)}
                         required
                     >
@@ -109,8 +131,9 @@ export default function Register({ roles, selectedRole }) {
                         type="password"
                         name="password"
                         value={data.password}
-                        className="mt-1 block w-full"
+                        className="mt-2 block w-full"
                         autoComplete="new-password"
+                        placeholder="Minimo 8 caracteres"
                         onChange={(e) => setData('password', e.target.value)}
                         required
                     />
@@ -129,8 +152,9 @@ export default function Register({ roles, selectedRole }) {
                         type="password"
                         name="password_confirmation"
                         value={data.password_confirmation}
-                        className="mt-1 block w-full"
+                        className="mt-2 block w-full"
                         autoComplete="new-password"
+                        placeholder="Repite tu contrasena"
                         onChange={(e) =>
                             setData('password_confirmation', e.target.value)
                         }
@@ -143,15 +167,8 @@ export default function Register({ roles, selectedRole }) {
                     />
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <Link
-                        href={route('login')}
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Ya tienes cuenta?
-                    </Link>
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
+                <div className="flex items-center justify-end pt-2">
+                    <PrimaryButton className="min-w-[180px]" disabled={processing}>
                         Crear cuenta
                     </PrimaryButton>
                 </div>

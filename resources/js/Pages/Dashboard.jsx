@@ -1,9 +1,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 
-export default function Dashboard() {
+export default function Dashboard({ dashboardRole, entryRoute }) {
     const { auth } = usePage().props;
     const user = auth.user;
+    const role = dashboardRole ?? user.role?.slug;
+    const isTransporter = role === 'transportista';
+    const isProducer = role === 'productor';
+    const isAdmin = role === 'administrador';
 
     return (
         <AuthenticatedLayout
@@ -47,6 +51,18 @@ export default function Dashboard() {
                                         <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Contacto</p>
                                         <p className="mt-1 font-semibold text-slate-900">{user.phone}</p>
                                     </div>
+                                    {entryRoute ? (
+                                        <Link
+                                            href={entryRoute}
+                                            className="inline-flex items-center rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_42px_-28px_rgba(4,120,87,0.8)] transition hover:bg-emerald-600"
+                                        >
+                                            {isTransporter
+                                                ? 'Gestionar vehiculos y rutas'
+                                                : isProducer
+                                                  ? 'Explorar rutas y solicitar'
+                                                  : 'Ver rutas activas'}
+                                        </Link>
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -67,9 +83,13 @@ export default function Dashboard() {
                                 </div>
                                 <div className="rounded-3xl bg-emerald-700 p-5 text-white shadow-lg">
                                     <p className="text-xs uppercase tracking-[0.2em] text-emerald-100">Proximo frente</p>
-                                    <p className="mt-3 text-xl font-semibold">Flujo logistico</p>
+                                    <p className="mt-3 text-xl font-semibold">
+                                        {isAdmin ? 'Control operativo' : 'Flujo logistico'}
+                                    </p>
                                     <p className="mt-2 text-sm text-emerald-50">
-                                        Publicacion de rutas, match de carga y confirmacion del servicio.
+                                        {isAdmin
+                                            ? 'Validacion de transportistas, supervision del sistema y seguimiento de actividad.'
+                                            : 'Publicacion de rutas, match de carga y confirmacion del servicio.'}
                                     </p>
                                 </div>
                             </div>
@@ -82,10 +102,12 @@ export default function Dashboard() {
                                 01
                             </p>
                             <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                                Publicacion de rutas
+                                {isAdmin ? 'Validacion documental' : 'Publicacion de rutas'}
                             </h3>
                             <p className="mt-2 text-sm leading-6 text-slate-600">
-                                Panel para que el transportista publique origen, destino, fecha y capacidad disponible.
+                                {isAdmin
+                                    ? 'Revision de transportistas, documentos y estados de aprobacion.'
+                                    : 'Panel para que el transportista publique origen, destino, fecha y capacidad disponible.'}
                             </p>
                         </article>
 
@@ -94,10 +116,14 @@ export default function Dashboard() {
                                 02
                             </p>
                             <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                                Solicitudes de transporte
+                                {isAdmin
+                                    ? 'Seguimiento del marketplace'
+                                    : 'Solicitudes de transporte'}
                             </h3>
                             <p className="mt-2 text-sm leading-6 text-slate-600">
-                                Flujo para que el productor solicite espacio de carga con peso, producto y destino.
+                                {isAdmin
+                                    ? 'Vista de actividad general, uso de rutas y comportamiento de solicitudes.'
+                                    : 'Flujo para que el productor solicite espacio de carga con peso, producto y destino.'}
                             </p>
                         </article>
 
@@ -106,10 +132,14 @@ export default function Dashboard() {
                                 03
                             </p>
                             <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                                Operacion y confianza
+                                {isAdmin
+                                    ? 'Seguridad por roles'
+                                    : 'Operacion y confianza'}
                             </h3>
                             <p className="mt-2 text-sm leading-6 text-slate-600">
-                                Validacion documental, contacto habilitado y sistema de calificaciones al cierre del servicio.
+                                {isAdmin
+                                    ? 'Separacion estricta entre vistas y rutas de transportista, productor y administrador.'
+                                    : 'Validacion documental, contacto habilitado y sistema de calificaciones al cierre del servicio.'}
                             </p>
                         </article>
                     </section>

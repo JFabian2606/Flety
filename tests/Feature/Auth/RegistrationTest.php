@@ -29,7 +29,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('transporter.dashboard', absolute: false));
 
         $this->assertDatabaseHas('transporters', [
             'user_id' => auth()->id(),
@@ -48,7 +48,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('producer.dashboard', absolute: false));
 
         $this->assertDatabaseHas('producers', [
             'user_id' => auth()->id(),

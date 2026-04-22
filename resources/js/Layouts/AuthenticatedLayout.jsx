@@ -7,6 +7,18 @@ import { useState } from 'react';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
+    const dashboardHref =
+        user.role?.slug === 'transportista'
+            ? route('transporter.dashboard')
+            : user.role?.slug === 'productor'
+              ? route('producer.dashboard')
+              : route('admin.dashboard');
+    const routesHref =
+        user.role?.slug === 'transportista'
+            ? route('transporter.routes.index')
+            : user.role?.slug === 'productor'
+              ? route('producer.routes.index')
+              : null;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
@@ -35,11 +47,26 @@ export default function AuthenticatedLayout({ header, children }) {
 
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
+                                    href={dashboardHref}
+                                    active={
+                                        route().current('transporter.dashboard') ||
+                                        route().current('producer.dashboard') ||
+                                        route().current('admin.dashboard')
+                                    }
                                 >
                                     Panel
                                 </NavLink>
+                                {routesHref ? (
+                                    <NavLink
+                                        href={routesHref}
+                                        active={
+                                            route().current('transporter.routes.index') ||
+                                            route().current('producer.routes.index')
+                                        }
+                                    >
+                                        Rutas
+                                    </NavLink>
+                                ) : null}
                             </div>
                         </div>
 
@@ -142,11 +169,26 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <div className="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
+                            href={dashboardHref}
+                            active={
+                                route().current('transporter.dashboard') ||
+                                route().current('producer.dashboard') ||
+                                route().current('admin.dashboard')
+                            }
                         >
                             Dashboard
                         </ResponsiveNavLink>
+                        {routesHref ? (
+                            <ResponsiveNavLink
+                                href={routesHref}
+                                active={
+                                    route().current('transporter.routes.index') ||
+                                    route().current('producer.routes.index')
+                                }
+                            >
+                                Rutas
+                            </ResponsiveNavLink>
+                        ) : null}
                     </div>
 
                     <div className="border-t border-gray-200 pb-1 pt-4">
