@@ -299,6 +299,53 @@ class TransportRouteManagementTest extends TestCase
         ]);
     }
 
+    public function test_transport_request_requires_weight_product_type_and_delivery_destination(): void
+    {
+        $route = $this->createPublishedRoute([], 'request-required-route@example.com');
+        $producer = $this->createProducerUser('request-required-producer@example.com');
+
+        $this->actingAs($producer)
+            ->from(route('producer.routes.show', $route))
+            ->post(route('producer.transport-requests.store'), [
+                'transport_route_id' => $route->id,
+                'cargo_weight_kg' => '',
+                'product_type' => '',
+                'delivery_destination' => '',
+            ])
+            ->assertRedirect(route('producer.routes.show', $route))
+            ->assertSessionHasErrors([
+                'cargo_weight_kg',
+                'product_type',
+                'delivery_destination',
+            ]);
+
+        $this->assertDatabaseCount('transport_requests', 0);
+    }
+
+    public function test_transport_request_trims_product_and_destination_before_saving(): void
+    {
+        $route = $this->createPublishedRoute([], 'request-trim-route@example.com');
+        $producer = $this->createProducerUser('request-trim-producer@example.com');
+
+        $this->actingAs($producer)
+            ->post(route('producer.transport-requests.store'), [
+                'transport_route_id' => $route->id,
+                'cargo_weight_kg' => 450,
+                'product_type' => '  Cafe pergamino  ',
+                'delivery_destination' => '  Mosquera centro  ',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('transport_requests', [
+            'transport_route_id' => $route->id,
+            'producer_id' => $producer->producerProfile->id,
+            'cargo_weight_kg' => 450,
+            'product_type' => 'Cafe pergamino',
+            'delivery_destination' => 'Mosquera centro',
+            'status' => TransportRequest::STATUS_PENDING,
+        ]);
+    }
+
     public function test_producer_cannot_request_more_weight_than_available_capacity(): void
     {
         $route = $this->createPublishedRoute([
@@ -393,6 +440,38 @@ class TransportRouteManagementTest extends TestCase
         $response->assertSee($visibleRoute->destination);
         $response->assertDontSee($hiddenByOrigin->origin);
         $response->assertDontSee($hiddenByDestination->destination);
+    }
+
+    public function test_producer_can_view_a_published_route_detail(): void
+    {
+        $route = $this->createPublishedRoute([
+            'origin' => 'Sogamoso',
+            'destination' => 'Bogota Norte',
+            'origin_lat' => 5.7143,
+            'origin_lng' => -72.9339,
+            'destination_lat' => 4.711,
+            'destination_lng' => -74.0721,
+        ], 'producer-route-detail@example.com');
+        $producer = $this->createProducerUser('route-detail-viewer@example.com');
+
+        $response = $this->actingAs($producer)
+            ->get(route('producer.routes.show', $route));
+
+        $response->assertOk();
+        $response->assertSee('Sogamoso');
+        $response->assertSee('Bogota Norte');
+    }
+
+    public function test_producer_cannot_view_unavailable_route_detail(): void
+    {
+        $route = $this->createPublishedRoute([
+            'departure_at' => Carbon::now()->subDay(),
+        ], 'producer-route-hidden-detail@example.com');
+        $producer = $this->createProducerUser('route-hidden-detail-viewer@example.com');
+
+        $this->actingAs($producer)
+            ->get(route('producer.routes.show', $route))
+            ->assertNotFound();
     }
 
     public function test_producer_cannot_see_transporter_contact_before_request_is_accepted(): void
