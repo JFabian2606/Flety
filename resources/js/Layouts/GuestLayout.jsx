@@ -39,9 +39,6 @@ export default function GuestLayout({
                                             alt="Flety"
                                             className="h-10 w-auto"
                                         />
-                                        <span className="text-sm font-semibold tracking-[0.24em] text-white/90">
-                                            FLETY
-                                        </span>
                                     </Link>
 
                                     <Link
