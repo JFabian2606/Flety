@@ -62,50 +62,6 @@ class TransportRouteController extends Controller
                 ])
             : [];
 
-        $incomingRequests = $transporter
-            ? TransportRequest::query()
-                ->with([
-                    'route:id,origin,destination,departure_at,transporter_id',
-                    'producer.user:id,name',
-                ])
-                ->whereHas('route', fn (Builder $query) => $query->where('transporter_id', $transporter->id))
-                ->latest('requested_at')
-                ->get()
-                ->map(fn (TransportRequest $transportRequest) => [
-                    'id' => $transportRequest->id,
-                    'cargo_weight_kg' => (float) $transportRequest->cargo_weight_kg,
-                    'product_type' => $transportRequest->product_type,
-                    'delivery_destination' => $transportRequest->delivery_destination,
-                    'estimated_cost' => $transportRequest->estimated_cost !== null ? (float) $transportRequest->estimated_cost : null,
-                    'status' => $transportRequest->status,
-                    'requested_at' => $transportRequest->requested_at?->toIso8601String(),
-                    'route' => $transportRequest->route ? [
-                        'origin' => $transportRequest->route->origin,
-                        'destination' => $transportRequest->route->destination,
-                        'departure_at' => $transportRequest->route->departure_at?->toIso8601String(),
-                    ] : null,
-                    'producer' => $transportRequest->producer?->user ? [
-                        'name' => $transportRequest->producer->user->name,
-                    ] : null,
-                ])
-            : [];
-
-        $confirmedServices = $transporter
-            ? Service::query()
-                ->with([
-                    'contact',
-                    'route.vehicle:id,plate,vehicle_type',
-                    'transportRequest.producer.user:id,name,phone',
-                ])
-                ->where('status', Service::STATUS_CONFIRMED)
-                ->whereHas('route', fn (Builder $query) => $query->where('transporter_id', $transporter->id))
-                ->latest('confirmed_at')
-                ->get()
-                ->map(fn (Service $service) => $this->mapServiceForTransporter($service))
-                ->filter()
-                ->values()
-            : [];
-
         return Inertia::render('Routes/Index', [
             'role' => 'transportista',
             'transporterProfile' => $transporter ? [
@@ -127,8 +83,6 @@ class TransportRouteController extends Controller
             'myRoutes' => $myRoutes,
             'availableRoutes' => [],
             'myRequests' => [],
-            'incomingRequests' => $incomingRequests,
-            'confirmedServices' => $confirmedServices,
         ]);
     }
 

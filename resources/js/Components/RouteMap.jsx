@@ -188,7 +188,7 @@ export default function RouteMap({
     }
 
     return (
-        <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+        <div className="min-w-0 max-w-full overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
             <MapContainer
                 center={center}
                 zoom={6}

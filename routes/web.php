@@ -39,6 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/transportista/rutas', [TransportRouteController::class, 'transporterIndex'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.index');
+    Route::get('/transportista/solicitudes', [TransportRequestController::class, 'transporterIndex'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.requests.index');
     Route::post('/transportista/rutas/previsualizar', [TransportRouteController::class, 'preview'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.preview');

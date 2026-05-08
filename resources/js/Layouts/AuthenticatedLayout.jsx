@@ -34,22 +34,29 @@ export default function AuthenticatedLayout({ header, children }) {
                       active: route().current('admin.dashboard'),
                   },
               ]
-            : roleSlug === 'transportista'
-              ? [
+              : roleSlug === 'transportista'
+                ? [
                     {
-                        label: 'Rutas y solicitudes',
+                        label: 'Panel transportista',
+                        href: route('transporter.dashboard'),
+                        active: route().current('transporter.dashboard'),
+                    },
+                    {
+                        label: 'Gestionar rutas',
                         href: route('transporter.routes.index'),
                         active: route().current('transporter.routes.index'),
+                    },
+                    {
+                        label: 'Solicitudes y contactos',
+                        href: route('transporter.requests.index'),
+                        active:
+                            route().current('transporter.requests.index') ||
+                            route().current('transporter.transport-requests.*'),
                     },
                     {
                         label: 'Registrar vehiculo',
                         href: route('transporter.vehicles.create'),
                         active: route().current('transporter.vehicles.*'),
-                    },
-                    {
-                        label: 'Panel transportista',
-                        href: route('transporter.dashboard'),
-                        active: route().current('transporter.dashboard'),
                     },
                 ]
               : [
@@ -70,11 +77,11 @@ export default function AuthenticatedLayout({ header, children }) {
     const [showingModuleMenu, setShowingModuleMenu] = useState(false);
 
     return (
-        <div className="min-h-screen bg-[linear-gradient(180deg,#eef7ec_0%,#f6faf3_42%,#fbfcf8_100%)] text-[#203029]">
+        <div className="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#eef7ec_0%,#f6faf3_42%,#fbfcf8_100%)] text-[#203029]">
             <nav className="sticky top-0 z-40 border-b border-[#dfe8dc] bg-white/96 shadow-[0_14px_34px_-30px_rgba(31,74,49,0.45)] backdrop-blur">
-                <div className="mx-auto max-w-[1540px] px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between">
-                        <div className="flex">
+                <div className="mx-auto min-w-0 max-w-[1540px] px-4 sm:px-6 lg:px-8">
+                    <div className="flex h-16 min-w-0 justify-between">
+                        <div className="flex min-w-0">
                             <div className="flex items-center">
                                 <button
                                     type="button"
@@ -111,10 +118,10 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <span className="hidden sm:inline">Menu</span>
                                 </button>
                             </div>
-                            <div className="flex shrink-0 items-center">
+                            <div className="flex min-w-0 shrink items-center">
                                 <Link href="/">
-                                    <div className="flex items-center gap-3">
-                                        <ApplicationLogo className="block h-9 w-auto fill-current text-emerald-700" />
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <ApplicationLogo className="block h-8 w-auto fill-current text-emerald-700 sm:h-9" />
                                         <div className="hidden sm:block">
                                             <div className="text-sm font-semibold tracking-[0.2em] text-emerald-700">
                                                 FLETY
@@ -270,6 +277,16 @@ export default function AuthenticatedLayout({ header, children }) {
                                 }
                             >
                                 Rutas
+                            </ResponsiveNavLink>
+                        ) : null}
+                        {roleSlug === 'transportista' ? (
+                            <ResponsiveNavLink
+                                href={route('transporter.requests.index')}
+                                active={route().current(
+                                    'transporter.requests.index',
+                                )}
+                            >
+                                Solicitudes
                             </ResponsiveNavLink>
                         ) : null}
                     </div>
@@ -438,7 +455,9 @@ export default function AuthenticatedLayout({ header, children }) {
                 </header>
             )}
 
-            <main className="animate-app-page-in">{children}</main>
+            <main className="animate-app-page-in min-w-0 overflow-x-hidden">
+                {children}
+            </main>
         </div>
     );
 }
