@@ -190,9 +190,6 @@ export default function Welcome({ auth, canLogin, canRegister }) {
                                         <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[#ffe9a8]">
                                             Marketplace PWA
                                         </p>
-                                        <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-white sm:text-2xl">
-                                            Flety
-                                        </p>
                                     </div>
                                 </div>
 

@@ -864,7 +864,7 @@ class TransportRouteManagementTest extends TestCase
         $producerResponse->assertSee('573001112233');
 
         $transporterResponse = $this->actingAs($transporterUser->fresh())
-            ->get(route('transporter.routes.index'));
+            ->get(route('transporter.requests.index'));
 
         $transporterResponse->assertOk();
         $transporterResponse->assertSee('3002223344');
