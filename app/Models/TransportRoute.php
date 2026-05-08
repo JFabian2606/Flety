@@ -18,6 +18,7 @@ class TransportRoute extends Model
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_STARTING_SOON = 'starting_soon';
+    public const STATUS_DEPARTURE_DUE = 'departure_due';
 
     protected $fillable = [
         'transporter_id',
@@ -74,20 +75,20 @@ class TransportRoute extends Model
 
     public function operationalStatus(?Carbon $now = null): string
     {
-        if ($this->status !== self::STATUS_PUBLISHED) {
+        if (! in_array($this->status, [self::STATUS_PUBLISHED, self::STATUS_CLOSED], true)) {
             return $this->status;
         }
 
         $now ??= now();
 
         if ($this->departure_at && $this->departure_at->lessThanOrEqualTo($now)) {
-            return self::STATUS_IN_PROGRESS;
+            return self::STATUS_DEPARTURE_DUE;
         }
 
         if ($this->departure_at && $this->departure_at->lessThanOrEqualTo($now->copy()->addHours(5))) {
             return self::STATUS_STARTING_SOON;
         }
 
-        return self::STATUS_PUBLISHED;
+        return $this->status;
     }
 }

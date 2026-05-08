@@ -284,6 +284,81 @@ class TransportRouteManagementTest extends TestCase
         $this->assertNotNull($route->fresh()->distance_km);
     }
 
+    public function test_transporter_cannot_publish_overlapping_routes_with_the_same_vehicle(): void
+    {
+        $this->fakeSuccessfulRouteResponse();
+
+        $departureAt = now()->addDays(3)->setTime(8, 0);
+        $route = $this->createPublishedRoute([
+            'departure_at' => $departureAt,
+            'estimated_duration_minutes' => 300,
+        ], 'overlap-route-owner@example.com');
+        $route->load('transporter.user');
+
+        $this->actingAs($route->transporter->user)
+            ->from(route('transporter.routes.index'))
+            ->post(route('transporter.routes.store'), [
+                'vehicle_id' => $route->vehicle_id,
+                'origin' => 'Tunja',
+                'origin_lat' => 5.8267,
+                'origin_lng' => -73.0339,
+                'destination' => 'Bogota',
+                'destination_lat' => 4.711,
+                'destination_lng' => -74.0721,
+                'departure_at' => $departureAt->copy()->addHours(2)->format('Y-m-d H:i:s'),
+                'available_capacity_kg' => 600,
+                'permitted_cargo_type' => 'Papa',
+            ])
+            ->assertRedirect(route('transporter.routes.index'))
+            ->assertSessionHasErrors(['vehicle_id']);
+
+        $this->assertStringContainsString(
+            'Ya tienes una ruta pendiente en otro lugar en este intervalo de tiempo con el vehiculo',
+            session('errors')->first('vehicle_id'),
+        );
+        $this->assertSame($route->id, session('route_conflict.id'));
+        $this->assertSame($route->vehicle_id, session('route_conflict.vehicle.id'));
+
+        $this->assertDatabaseCount('transport_routes', 1);
+    }
+
+    public function test_transporter_can_publish_overlapping_routes_with_different_vehicles(): void
+    {
+        $this->fakeSuccessfulRouteResponse();
+
+        $departureAt = now()->addDays(3)->setTime(8, 0);
+        $route = $this->createPublishedRoute([
+            'departure_at' => $departureAt,
+            'estimated_duration_minutes' => 300,
+        ], 'different-vehicle-route-owner@example.com');
+        $route->load('transporter.user');
+
+        $secondVehicle = Vehicle::query()->create([
+            'transporter_id' => $route->transporter_id,
+            'plate' => 'DIF456',
+            'vehicle_type' => 'Camion',
+            'capacity_kg' => 3000,
+            'status' => Vehicle::STATUS_AVAILABLE,
+        ]);
+
+        $this->actingAs($route->transporter->user)
+            ->post(route('transporter.routes.store'), [
+                'vehicle_id' => $secondVehicle->id,
+                'origin' => 'Tunja',
+                'origin_lat' => 5.8267,
+                'origin_lng' => -73.0339,
+                'destination' => 'Bogota',
+                'destination_lat' => 4.711,
+                'destination_lng' => -74.0721,
+                'departure_at' => $departureAt->copy()->addHours(2)->format('Y-m-d H:i:s'),
+                'available_capacity_kg' => 600,
+                'permitted_cargo_type' => 'Papa',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseCount('transport_routes', 2);
+    }
+
     public function test_route_owner_can_delete_a_published_route(): void
     {
         $route = $this->createPublishedRoute([], 'delete-route@example.com');
@@ -295,6 +370,101 @@ class TransportRouteManagementTest extends TestCase
 
         $this->assertDatabaseMissing('transport_routes', [
             'id' => $route->id,
+        ]);
+    }
+
+    public function test_route_owner_can_start_and_complete_a_due_route(): void
+    {
+        $route = $this->createPublishedRoute([
+            'origin' => 'Tunja',
+            'destination' => 'Bogota',
+            'departure_at' => now()->subMinute(),
+        ], 'complete-route@example.com');
+        $route->load('transporter.user');
+        $producer = $this->createProducerUser('completed-route-viewer@example.com');
+
+        $this->actingAs($route->transporter->user)
+            ->patch(route('transporter.routes.start', $route))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('transport_routes', [
+            'id' => $route->id,
+            'status' => TransportRoute::STATUS_IN_PROGRESS,
+        ]);
+
+        $this->actingAs($route->transporter->user)
+            ->patch(route('transporter.routes.complete', $route))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('transport_routes', [
+            'id' => $route->id,
+            'status' => TransportRoute::STATUS_COMPLETED,
+        ]);
+
+        $indexResponse = $this->actingAs($producer)
+            ->get(route('producer.routes.index'));
+
+        $indexResponse->assertOk();
+        $indexResponse->assertDontSee('Tunja');
+        $indexResponse->assertDontSee('Bogota');
+
+        $this->actingAs($producer)
+            ->get(route('producer.routes.show', $route))
+            ->assertNotFound();
+    }
+
+    public function test_published_route_operational_status_changes_near_and_after_departure(): void
+    {
+        $route = $this->createPublishedRoute([
+            'departure_at' => now()->addHours(4),
+        ], 'route-starting-soon@example.com');
+
+        $this->assertSame(
+            TransportRoute::STATUS_STARTING_SOON,
+            $route->fresh()->operationalStatus(),
+        );
+
+        $route->update([
+            'departure_at' => now()->subMinute(),
+        ]);
+
+        $this->assertSame(
+            TransportRoute::STATUS_DEPARTURE_DUE,
+            $route->fresh()->operationalStatus(),
+        );
+    }
+
+    public function test_route_owner_can_cancel_a_due_route_instead_of_starting(): void
+    {
+        $route = $this->createPublishedRoute([
+            'departure_at' => now()->subMinute(),
+        ], 'cancel-due-route@example.com');
+        $route->load('transporter.user');
+
+        $this->actingAs($route->transporter->user)
+            ->patch(route('transporter.routes.cancel', $route))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('transport_routes', [
+            'id' => $route->id,
+            'status' => TransportRoute::STATUS_CANCELLED,
+        ]);
+    }
+
+    public function test_route_owner_cannot_start_route_before_departure_time(): void
+    {
+        $route = $this->createPublishedRoute([
+            'departure_at' => now()->addHour(),
+        ], 'early-start-route@example.com');
+        $route->load('transporter.user');
+
+        $this->actingAs($route->transporter->user)
+            ->patch(route('transporter.routes.start', $route))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('transport_routes', [
+            'id' => $route->id,
+            'status' => TransportRoute::STATUS_PUBLISHED,
         ]);
     }
 
@@ -321,10 +491,23 @@ class TransportRouteManagementTest extends TestCase
             ->delete(route('transporter.routes.destroy', $route))
             ->assertForbidden();
 
+        $this->actingAs($otherTransporter)
+            ->patch(route('transporter.routes.complete', $route))
+            ->assertForbidden();
+
+        $this->actingAs($otherTransporter)
+            ->patch(route('transporter.routes.start', $route))
+            ->assertForbidden();
+
+        $this->actingAs($otherTransporter)
+            ->patch(route('transporter.routes.cancel', $route))
+            ->assertForbidden();
+
         $this->assertDatabaseHas('transport_routes', [
             'id' => $route->id,
             'origin' => 'Duitama',
             'destination' => 'Bogota',
+            'status' => TransportRoute::STATUS_PUBLISHED,
         ]);
     }
 

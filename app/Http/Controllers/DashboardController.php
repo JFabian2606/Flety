@@ -37,6 +37,7 @@ class DashboardController extends Controller
                 ->with('vehicle:id,plate,vehicle_type,capacity_kg')
                 ->withCount('transportRequests')
                 ->where('transporter_id', $transporter->id)
+                ->where('status', '!=', TransportRoute::STATUS_CANCELLED)
                 ->where('departure_at', '>', now())
                 ->orderBy('departure_at')
                 ->first()
@@ -475,6 +476,7 @@ class DashboardController extends Controller
             'rejected' => 'Rechazado',
             'published' => 'Publicada',
             'starting_soon' => 'Arranca pronto',
+            'departure_due' => 'Hora de salir',
             'in_progress' => 'En camino',
             'completed' => 'Ruta completa',
             'closed' => 'Cerrada',
