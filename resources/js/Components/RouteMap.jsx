@@ -1,6 +1,7 @@
 import {
     MapContainer,
     Marker,
+    Polygon,
     Polyline,
     Popup,
     TileLayer,
@@ -9,8 +10,13 @@ import {
 } from 'react-leaflet';
 import { Fragment, useEffect } from 'react';
 import L from 'leaflet';
+import { colombiaBoundary } from '@/Data/colombiaBoundary';
 
 const defaultCenter = [4.5709, -74.2973];
+const colombiaBounds = [
+    [-4.5, -82.2],
+    [13.8, -66.7],
+];
 
 const markerIcon = new L.Icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -19,10 +25,50 @@ const markerIcon = new L.Icon({
     iconAnchor: [12, 41],
 });
 
+const colombiaBoundaryStyle = {
+    color: '#16733c',
+    dashArray: '8 7',
+    fillColor: '#4f9547',
+    fillOpacity: 0.08,
+    opacity: 0.95,
+    weight: 2.4,
+};
+
+const routeColors = [
+    '#1677ff',
+    '#f97316',
+    '#8b5cf6',
+    '#dc2626',
+    '#0891b2',
+    '#65a30d',
+    '#be123c',
+    '#7c3aed',
+    '#0f766e',
+    '#ca8a04',
+];
+
+function isInsideColombiaBounds(lat, lng) {
+    const numericLat = Number(lat);
+    const numericLng = Number(lng);
+
+    return (
+        Number.isFinite(numericLat) &&
+        Number.isFinite(numericLng) &&
+        numericLat >= colombiaBounds[0][0] &&
+        numericLat <= colombiaBounds[1][0] &&
+        numericLng >= colombiaBounds[0][1] &&
+        numericLng <= colombiaBounds[1][1]
+    );
+}
+
 function MapClickSelector({ mode, onSelectPoint }) {
     useMapEvents({
         click(event) {
             if (!onSelectPoint) {
+                return;
+            }
+
+            if (!isInsideColombiaBounds(event.latlng.lat, event.latlng.lng)) {
                 return;
             }
 
@@ -42,32 +88,50 @@ function hasPoint(lat, lng) {
 }
 
 function routePositions(route) {
-    if (
-        !hasPoint(route.origin_lat, route.origin_lng) ||
-        !hasPoint(route.destination_lat, route.destination_lng)
-    ) {
-        return [];
-    }
-
-    const straightPositions = [
-        [Number(route.origin_lat), Number(route.origin_lng)],
-        [Number(route.destination_lat), Number(route.destination_lng)],
-    ];
-
     const geometryPositions = Array.isArray(route.route_geometry)
         ? route.route_geometry
             .map((point) => [Number(point[1]), Number(point[0])])
             .filter(([lat, lng]) => hasPoint(lat, lng))
         : [];
 
-    return geometryPositions.length ? geometryPositions : straightPositions;
+    return geometryPositions;
 }
 
-function FitRouteBounds({ routes, originPoint, destinationPoint }) {
+function routeColor(index) {
+    return routeColors[index % routeColors.length];
+}
+
+function createNumberedMarkerIcon(color, number) {
+    return L.divIcon({
+        className: '',
+        html: `
+            <div style="
+                align-items:center;
+                background:${color};
+                border:2px solid white;
+                border-radius:999px;
+                box-shadow:0 10px 24px rgba(15,23,42,.28);
+                color:white;
+                display:flex;
+                font-size:12px;
+                font-weight:800;
+                height:28px;
+                justify-content:center;
+                line-height:1;
+                width:28px;
+            ">${number}</div>
+        `,
+        iconAnchor: [14, 14],
+        iconSize: [28, 28],
+    });
+}
+
+function FitRouteBounds({ routes, originPoint, destinationPoint, draftRoute }) {
     const map = useMap();
 
     useEffect(() => {
         const points = routes.flatMap((route) => routePositions(route));
+        points.push(...routePositions(draftRoute ?? {}));
 
         if (hasPoint(originPoint?.lat, originPoint?.lng)) {
             points.push([Number(originPoint.lat), Number(originPoint.lng)]);
@@ -91,7 +155,7 @@ function FitRouteBounds({ routes, originPoint, destinationPoint }) {
             maxZoom: 11,
             padding: [32, 32],
         });
-    }, [destinationPoint, map, originPoint, routes]);
+    }, [destinationPoint, draftRoute, map, originPoint, routes]);
 
     return null;
 }
@@ -103,6 +167,7 @@ export default function RouteMap({
     selectable = false,
     selectionMode = 'origin',
     onSelectPoint = null,
+    draftRoute = null,
     height = '360px',
 }) {
     const validRoutes = routes.filter(
@@ -127,6 +192,9 @@ export default function RouteMap({
             <MapContainer
                 center={center}
                 zoom={6}
+                minZoom={5}
+                maxBounds={colombiaBounds}
+                maxBoundsViscosity={1}
                 scrollWheelZoom={true}
                 className="z-0"
                 style={{ height, width: '100%' }}
@@ -134,6 +202,12 @@ export default function RouteMap({
                 <TileLayer
                     attribution='&copy; OpenStreetMap contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+
+                <Polygon
+                    positions={colombiaBoundary}
+                    pathOptions={colombiaBoundaryStyle}
+                    interactive={false}
                 />
 
                 {selectable ? (
@@ -147,6 +221,7 @@ export default function RouteMap({
                     routes={validRoutes}
                     originPoint={originPoint}
                     destinationPoint={destinationPoint}
+                    draftRoute={draftRoute}
                 />
 
                 {hasPoint(originPoint?.lat, originPoint?.lng) ? (
@@ -170,20 +245,14 @@ export default function RouteMap({
                     </Marker>
                 ) : null}
 
-                {hasPoint(originPoint?.lat, originPoint?.lng) &&
-                hasPoint(destinationPoint?.lat, destinationPoint?.lng) ? (
+                {routePositions(draftRoute ?? {}).length >= 2 ? (
                     <Polyline
-                        positions={[
-                            [Number(originPoint.lat), Number(originPoint.lng)],
-                            [
-                                Number(destinationPoint.lat),
-                                Number(destinationPoint.lng),
-                            ],
-                        ]}
+                        positions={routePositions(draftRoute)}
+                        pathOptions={{ color: '#1677ff', weight: 5 }}
                     />
                 ) : null}
 
-                {validRoutes.map((route) => {
+                {validRoutes.map((route, index) => {
                     const straightPositions = [
                         [Number(route.origin_lat), Number(route.origin_lng)],
                         [
@@ -193,11 +262,19 @@ export default function RouteMap({
                     ];
 
                     const positions = routePositions(route);
+                    const color = routeColor(index);
+                    const routeNumber = index + 1;
+                    const originIcon = createNumberedMarkerIcon(
+                        color,
+                        routeNumber,
+                    );
 
                     return (
                         <Fragment key={route.id}>
-                            <Marker position={straightPositions[0]} icon={markerIcon}>
+                            <Marker position={straightPositions[0]} icon={originIcon}>
                                 <Popup>
+                                    <strong>Ruta {routeNumber}</strong>
+                                    <br />
                                     <strong>Salida:</strong> {route.origin}
                                     <br />
                                     <strong>Destino:</strong>{' '}
@@ -208,8 +285,10 @@ export default function RouteMap({
                                 </Popup>
                             </Marker>
 
-                            <Marker position={straightPositions[1]} icon={markerIcon}>
+                            <Marker position={straightPositions[1]} icon={originIcon}>
                                 <Popup>
+                                    <strong>Ruta {routeNumber}</strong>
+                                    <br />
                                     <strong>Llegada:</strong>{' '}
                                     {route.destination}
                                     <br />
@@ -217,7 +296,16 @@ export default function RouteMap({
                                 </Popup>
                             </Marker>
 
-                            <Polyline positions={positions} />
+                            {positions.length >= 2 ? (
+                                <Polyline
+                                    positions={positions}
+                                    pathOptions={{
+                                        color,
+                                        opacity: 0.92,
+                                        weight: 5,
+                                    }}
+                                />
+                            ) : null}
                         </Fragment>
                     );
                 })}

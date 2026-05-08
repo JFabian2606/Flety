@@ -1,7 +1,10 @@
 import RouteMap from '@/Components/RouteMap';
+import colombiaPlaces from '@/Data/colombiaPlaces';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const colombiaTimeZone = 'America/Bogota';
 
 const statusLabels = {
     accepted: 'Aceptada',
@@ -10,9 +13,12 @@ const statusLabels = {
     cancelled: 'Cancelada',
     closed: 'Cerrada',
     confirmed: 'Confirmado',
+    completed: 'Ruta completa',
     pending: 'Pendiente',
     published: 'Publicada',
+    in_progress: 'En camino',
     rejected: 'Rechazada',
+    starting_soon: 'Arranca pronto',
 };
 
 function formatDate(value) {
@@ -22,6 +28,7 @@ function formatDate(value) {
 
     return new Intl.DateTimeFormat('es-CO', {
         dateStyle: 'medium',
+        timeZone: colombiaTimeZone,
         timeStyle: 'short',
     }).format(new Date(value));
 }
@@ -37,9 +44,23 @@ function toDateTimeLocal(value) {
         return '';
     }
 
-    const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        day: '2-digit',
+        hour: '2-digit',
+        hour12: false,
+        minute: '2-digit',
+        month: '2-digit',
+        timeZone: colombiaTimeZone,
+        year: 'numeric',
+    })
+        .formatToParts(date)
+        .reduce((values, part) => {
+            values[part.type] = part.value;
 
-    return offsetDate.toISOString().slice(0, 16);
+            return values;
+        }, {});
+
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
 function formatCurrency(value) {
@@ -54,6 +75,119 @@ function formatCurrency(value) {
     }).format(Number(value));
 }
 
+function formatDuration(minutes) {
+    const numericMinutes = Number(minutes);
+
+    if (!Number.isFinite(numericMinutes) || numericMinutes <= 0) {
+        return 'Pendiente';
+    }
+
+    const roundedMinutes = Math.round(numericMinutes);
+    const hours = Math.floor(roundedMinutes / 60);
+    const remainingMinutes = roundedMinutes % 60;
+
+    if (hours <= 0) {
+        return `${remainingMinutes} min`;
+    }
+
+    if (remainingMinutes === 0) {
+        return `${hours} h`;
+    }
+
+    return `${hours} h ${remainingMinutes} min`;
+}
+
+const routeColors = [
+    '#1677ff',
+    '#f97316',
+    '#8b5cf6',
+    '#dc2626',
+    '#0891b2',
+    '#65a30d',
+    '#be123c',
+    '#7c3aed',
+    '#0f766e',
+    '#ca8a04',
+];
+
+function routeColor(index) {
+    return routeColors[index % routeColors.length];
+}
+
+function normalizeText(value) {
+    return String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+}
+
+function findDepartment(departmentCode) {
+    return colombiaPlaces.find(
+        (department) => department.code === departmentCode,
+    );
+}
+
+function findMunicipality(departmentCode, municipalityCode) {
+    const department = findDepartment(departmentCode);
+
+    return department?.municipalities.find(
+        (municipality) => municipality.code === municipalityCode,
+    );
+}
+
+function formatPlaceLabel(department, municipality) {
+    return `${municipality.name}, ${department.name}`;
+}
+
+function findPlaceSelection(label, lat, lng) {
+    const normalizedLabel = normalizeText(label);
+    const numericLat = Number(lat);
+    const numericLng = Number(lng);
+    let nearest = null;
+
+    for (const department of colombiaPlaces) {
+        for (const municipality of department.municipalities) {
+            const municipalityName = normalizeText(municipality.name);
+            const departmentName = normalizeText(department.name);
+
+            if (
+                normalizedLabel.includes(municipalityName) &&
+                (!normalizedLabel.includes(',') ||
+                    normalizedLabel.includes(departmentName))
+            ) {
+                return {
+                    departmentCode: department.code,
+                    municipalityCode: municipality.code,
+                };
+            }
+
+            if (Number.isFinite(numericLat) && Number.isFinite(numericLng)) {
+                const distance =
+                    Math.abs(Number(municipality.lat) - numericLat) +
+                    Math.abs(Number(municipality.lng) - numericLng);
+
+                if (!nearest || distance < nearest.distance) {
+                    nearest = {
+                        departmentCode: department.code,
+                        distance,
+                        municipalityCode: municipality.code,
+                    };
+                }
+            }
+        }
+    }
+
+    return nearest && nearest.distance < 0.35
+        ? {
+              departmentCode: nearest.departmentCode,
+              municipalityCode: nearest.municipalityCode,
+          }
+        : {
+              departmentCode: '',
+              municipalityCode: '',
+          };
+}
+
 function hasRouteCoordinates(route) {
     return (
         Number.isFinite(Number(route.origin_lat)) &&
@@ -61,6 +195,145 @@ function hasRouteCoordinates(route) {
         Number.isFinite(Number(route.destination_lat)) &&
         Number.isFinite(Number(route.destination_lng))
     );
+}
+
+function mapPointFromData(data, prefix) {
+    const lat = data[`${prefix}_lat`];
+    const lng = data[`${prefix}_lng`];
+
+    return lat && lng
+        ? {
+              lat: Number(lat),
+              lng: Number(lng),
+          }
+        : null;
+}
+
+function hasRealRouteGeometry(routePreview) {
+    return (
+        Array.isArray(routePreview?.route_geometry) &&
+        routePreview.route_geometry.length >= 2
+    );
+}
+
+function buildDraftRoute(formData, routePreview) {
+    if (!hasRealRouteGeometry(routePreview)) {
+        return null;
+    }
+
+    return {
+        id: 'preview',
+        origin: formData.origin,
+        origin_lat: formData.origin_lat,
+        origin_lng: formData.origin_lng,
+        destination: formData.destination,
+        destination_lat: formData.destination_lat,
+        destination_lng: formData.destination_lng,
+        route_geometry: routePreview.route_geometry,
+        available_capacity_kg: formData.available_capacity_kg,
+    };
+}
+
+function routePreviewMessage(state, error, routePreview) {
+    if (state === 'loading') {
+        return 'Calculando trayecto real por carretera...';
+    }
+
+    if (state === 'ready' && routePreview) {
+        const distance = routePreview.distance_km
+            ? `${routePreview.distance_km} km`
+            : 'distancia calculada';
+        const duration = routePreview.estimated_duration_minutes
+            ? ` - Tiempo aprox. ${formatDuration(routePreview.estimated_duration_minutes)}`
+            : '';
+
+        return `Trayecto real calculado: ${distance}${duration}`;
+    }
+
+    if (state === 'error') {
+        return error || 'No se pudo calcular el trayecto real.';
+    }
+
+    return 'Selecciona salida y llegada dentro de Colombia para calcular el trayecto real.';
+}
+
+function useRealRoutePreview(formData, initialRoutePreview = null) {
+    const [routePreview, setRoutePreview] = useState(initialRoutePreview);
+    const [routePreviewState, setRoutePreviewState] = useState(
+        hasRealRouteGeometry(initialRoutePreview) ? 'ready' : 'idle',
+    );
+    const [routePreviewError, setRoutePreviewError] = useState('');
+    const originPoint = mapPointFromData(formData, 'origin');
+    const destinationPoint = mapPointFromData(formData, 'destination');
+    const hasMapPoints = Boolean(originPoint && destinationPoint);
+
+    useEffect(() => {
+        setRoutePreview(null);
+        setRoutePreviewError('');
+
+        if (!hasMapPoints) {
+            setRoutePreviewState('idle');
+
+            return;
+        }
+
+        let active = true;
+        const timeoutId = window.setTimeout(async () => {
+            setRoutePreviewState('loading');
+
+            try {
+                const response = await window.axios.post(
+                    route('transporter.routes.preview'),
+                    {
+                        origin_lat: formData.origin_lat,
+                        origin_lng: formData.origin_lng,
+                        destination_lat: formData.destination_lat,
+                        destination_lng: formData.destination_lng,
+                    },
+                );
+
+                if (!active) {
+                    return;
+                }
+
+                setRoutePreview(response.data);
+                setRoutePreviewState('ready');
+            } catch (error) {
+                if (!active) {
+                    return;
+                }
+
+                const errors = error.response?.data?.errors;
+                setRoutePreviewError(
+                    errors?.origin_lat?.[0] ||
+                        errors?.destination_lat?.[0] ||
+                        error.response?.data?.message ||
+                        'No se pudo calcular el trayecto real por carretera.',
+                );
+                setRoutePreviewState('error');
+            }
+        }, 500);
+
+        return () => {
+            active = false;
+            window.clearTimeout(timeoutId);
+        };
+    }, [
+        formData.destination_lat,
+        formData.destination_lng,
+        formData.origin_lat,
+        formData.origin_lng,
+        hasMapPoints,
+    ]);
+
+    return {
+        destinationPoint,
+        hasMapPoints,
+        originPoint,
+        routePreview,
+        routePreviewError,
+        routePreviewState,
+    };
 }
 
 function cardClassName(extra = '') {
@@ -73,8 +346,11 @@ function StatusBadge({ status }) {
         approved: 'bg-emerald-100 text-emerald-700',
         available: 'bg-emerald-100 text-emerald-700',
         confirmed: 'bg-emerald-100 text-emerald-700',
+        completed: 'bg-slate-900 text-white',
+        in_progress: 'bg-sky-100 text-sky-700',
         pending: 'bg-amber-100 text-amber-700',
         published: 'bg-emerald-100 text-emerald-700',
+        starting_soon: 'bg-amber-100 text-amber-700',
         rejected: 'bg-rose-100 text-rose-700',
         cancelled: 'bg-rose-100 text-rose-700',
         closed: 'bg-slate-200 text-slate-700',
@@ -135,6 +411,76 @@ function FlashMessages({ success, error }) {
                 </section>
             ) : null}
         </>
+    );
+}
+
+function LocationSelector({
+    error,
+    idPrefix,
+    label,
+    selectedDepartmentCode,
+    selectedMunicipalityCode,
+    onDepartmentChange,
+    onMunicipalityChange,
+}) {
+    const selectedDepartment = findDepartment(selectedDepartmentCode);
+    const municipalities = selectedDepartment?.municipalities ?? [];
+
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-800">{label}</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label
+                        htmlFor={`${idPrefix}_department`}
+                        className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500"
+                    >
+                        Departamento
+                    </label>
+                    <select
+                        id={`${idPrefix}_department`}
+                        value={selectedDepartmentCode}
+                        onChange={(event) => onDepartmentChange(event.target.value)}
+                        className="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
+                    >
+                        <option value="">Selecciona departamento</option>
+                        {colombiaPlaces.map((department) => (
+                            <option key={department.code} value={department.code}>
+                                {department.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        htmlFor={`${idPrefix}_municipality`}
+                        className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500"
+                    >
+                        Ciudad o municipio
+                    </label>
+                    <select
+                        id={`${idPrefix}_municipality`}
+                        value={selectedMunicipalityCode}
+                        onChange={(event) => onMunicipalityChange(event.target.value)}
+                        disabled={!selectedDepartmentCode}
+                        className="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 sm:text-sm"
+                    >
+                        <option value="">
+                            {selectedDepartmentCode
+                                ? 'Selecciona ciudad o municipio'
+                                : 'Primero elige departamento'}
+                        </option>
+                        {municipalities.map((municipality) => (
+                            <option key={municipality.code} value={municipality.code}>
+                                {municipality.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+            <FieldError message={error} />
+        </div>
     );
 }
 
@@ -248,6 +594,42 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
     });
 
     const [selectionMode, setSelectionMode] = useState('origin');
+    const [originDepartmentCode, setOriginDepartmentCode] = useState('');
+    const [originMunicipalityCode, setOriginMunicipalityCode] = useState('');
+    const [destinationDepartmentCode, setDestinationDepartmentCode] =
+        useState('');
+    const [destinationMunicipalityCode, setDestinationMunicipalityCode] =
+        useState('');
+    const {
+        destinationPoint,
+        originPoint,
+        routePreview,
+        routePreviewError,
+        routePreviewState,
+    } = useRealRoutePreview(routeForm.data);
+
+    const selectPlace = (prefix, departmentCode, municipalityCode) => {
+        const department = findDepartment(departmentCode);
+        const municipality = findMunicipality(departmentCode, municipalityCode);
+
+        if (!department || !municipality) {
+            routeForm.setData({
+                ...routeForm.data,
+                [prefix]: '',
+                [`${prefix}_lat`]: '',
+                [`${prefix}_lng`]: '',
+            });
+
+            return;
+        }
+
+        routeForm.setData({
+            ...routeForm.data,
+            [prefix]: formatPlaceLabel(department, municipality),
+            [`${prefix}_lat`]: municipality.lat,
+            [`${prefix}_lng`]: municipality.lng,
+        });
+    };
 
     const selectedVehicle = vehicles.find(
         (vehicle) => String(vehicle.id) === String(routeForm.data.vehicle_id),
@@ -264,7 +646,9 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
         (!selectedVehicle ||
             Number(routeForm.data.available_capacity_kg) <=
                 Number(selectedVehicle.capacity_kg)) &&
-        routeForm.data.permitted_cargo_type.trim();
+        routeForm.data.permitted_cargo_type.trim() &&
+        routePreviewState === 'ready' &&
+        hasRealRouteGeometry(routePreview);
 
     return (
         <article className={cardClassName()}>
@@ -290,12 +674,17 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
 
             <form
                 className="mt-6 space-y-4"
+                noValidate
                 onSubmit={(event) => {
                     event.preventDefault();
                     routeForm.post(route('transporter.routes.store'), {
                         preserveScroll: true,
                         onSuccess: () => {
                             alert('Ruta publicada correctamente');
+                            setOriginDepartmentCode('');
+                            setOriginMunicipalityCode('');
+                            setDestinationDepartmentCode('');
+                            setDestinationMunicipalityCode('');
 
                             routeForm.reset(
                                 'origin',
@@ -309,9 +698,8 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
                                 'permitted_cargo_type',
                             );
                         },
-                        onError: (errors) => {
-                            console.log('Errores al publicar ruta:', errors);
-                            alert('No se pudo publicar la ruta. Revisa la consola del navegador.');
+                        onError: () => {
+                            alert('No se pudo publicar la ruta. Revisa los datos e intenta de nuevo.');
                         },
                     });
                 }}
@@ -349,51 +737,58 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
                     <FieldError message={routeForm.errors.vehicle_id} />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label
-                            htmlFor="origin"
-                            className="text-sm font-medium text-slate-700"
-                        >
-                            Origen
-                        </label>
-                        <input
-                            id="origin"
-                            required
-                            autoComplete="address-level2"
-                            value={routeForm.data.origin}
-                            onChange={(event) =>
-                                routeForm.setData('origin', event.target.value)
-                            }
-                            className="mt-2 block w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
-                            placeholder="Ej. Neiva"
-                        />
-                        <FieldError message={routeForm.errors.origin} />
-                    </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                    <LocationSelector
+                        idPrefix="origin"
+                        label="Origen"
+                        selectedDepartmentCode={originDepartmentCode}
+                        selectedMunicipalityCode={originMunicipalityCode}
+                        error={routeForm.errors.origin}
+                        onDepartmentChange={(departmentCode) => {
+                            setOriginDepartmentCode(departmentCode);
+                            setOriginMunicipalityCode('');
+                            routeForm.setData({
+                                ...routeForm.data,
+                                origin: '',
+                                origin_lat: '',
+                                origin_lng: '',
+                            });
+                        }}
+                        onMunicipalityChange={(municipalityCode) => {
+                            setOriginMunicipalityCode(municipalityCode);
+                            selectPlace(
+                                'origin',
+                                originDepartmentCode,
+                                municipalityCode,
+                            );
+                        }}
+                    />
 
-                    <div>
-                        <label
-                            htmlFor="destination"
-                            className="text-sm font-medium text-slate-700"
-                        >
-                            Destino
-                        </label>
-                        <input
-                            id="destination"
-                            required
-                            autoComplete="address-level2"
-                            value={routeForm.data.destination}
-                            onChange={(event) =>
-                                routeForm.setData(
-                                    'destination',
-                                    event.target.value,
-                                )
-                            }
-                            className="mt-2 block w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
-                            placeholder="Ej. Ibague"
-                        />
-                        <FieldError message={routeForm.errors.destination} />
-                    </div>
+                    <LocationSelector
+                        idPrefix="destination"
+                        label="Destino"
+                        selectedDepartmentCode={destinationDepartmentCode}
+                        selectedMunicipalityCode={destinationMunicipalityCode}
+                        error={routeForm.errors.destination}
+                        onDepartmentChange={(departmentCode) => {
+                            setDestinationDepartmentCode(departmentCode);
+                            setDestinationMunicipalityCode('');
+                            routeForm.setData({
+                                ...routeForm.data,
+                                destination: '',
+                                destination_lat: '',
+                                destination_lng: '',
+                            });
+                        }}
+                        onMunicipalityChange={(municipalityCode) => {
+                            setDestinationMunicipalityCode(municipalityCode);
+                            selectPlace(
+                                'destination',
+                                destinationDepartmentCode,
+                                municipalityCode,
+                            );
+                        }}
+                    />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -466,7 +861,7 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
                             <button
                                 type="button"
                                 onClick={() => setSelectionMode('origin')}
-                            className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+                                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
                                     selectionMode === 'origin'
                                         ? 'bg-emerald-700 text-white'
                                         : 'bg-white text-slate-700'
@@ -478,7 +873,7 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
                             <button
                                 type="button"
                                 onClick={() => setSelectionMode('destination')}
-                            className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+                                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
                                     selectionMode === 'destination'
                                         ? 'bg-emerald-700 text-white'
                                         : 'bg-white text-slate-700'
@@ -492,22 +887,9 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
                     <RouteMap
                         selectable
                         selectionMode={selectionMode}
-                        originPoint={
-                            routeForm.data.origin_lat && routeForm.data.origin_lng
-                                ? {
-                                    lat: Number(routeForm.data.origin_lat),
-                                    lng: Number(routeForm.data.origin_lng),
-                                }
-                                : null
-                        }
-                        destinationPoint={
-                            routeForm.data.destination_lat && routeForm.data.destination_lng
-                                ? {
-                                    lat: Number(routeForm.data.destination_lat),
-                                    lng: Number(routeForm.data.destination_lng),
-                                }
-                                : null
-                        }
+                        originPoint={originPoint}
+                        destinationPoint={destinationPoint}
+                        draftRoute={buildDraftRoute(routeForm.data, routePreview)}
                         onSelectPoint={(point) => {
                             if (point.type === 'origin') {
                                 routeForm.setData({
@@ -546,6 +928,22 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
 
                     <FieldError message={routeForm.errors.origin_lat} />
                     <FieldError message={routeForm.errors.destination_lat} />
+
+                    <div
+                        className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
+                            routePreviewState === 'ready'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : routePreviewState === 'error'
+                                  ? 'bg-rose-100 text-rose-700'
+                                  : 'bg-white text-slate-600'
+                        }`}
+                    >
+                        {routePreviewMessage(
+                            routePreviewState,
+                            routePreviewError,
+                            routePreview,
+                        )}
+                    </div>
                 </div>
                 <div>
                     <label
@@ -572,7 +970,7 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
 
                 <button
                     type="submit"
-                    disabled={routeForm.processing}
+                    disabled={!canSubmitRoute || routeForm.processing}
                     className="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                     {routeForm.processing ? 'Publicando...' : 'Publicar ruta'}
@@ -619,10 +1017,68 @@ function EditRouteForm({ transportRoute, vehicles, onCancel, onSuccess }) {
         permitted_cargo_type: transportRoute.permitted_cargo_type ?? '',
     });
     const [selectionMode, setSelectionMode] = useState('origin');
+    const initialOriginSelection = findPlaceSelection(
+        transportRoute.origin,
+        transportRoute.origin_lat,
+        transportRoute.origin_lng,
+    );
+    const initialDestinationSelection = findPlaceSelection(
+        transportRoute.destination,
+        transportRoute.destination_lat,
+        transportRoute.destination_lng,
+    );
+    const [originDepartmentCode, setOriginDepartmentCode] = useState(
+        initialOriginSelection.departmentCode,
+    );
+    const [originMunicipalityCode, setOriginMunicipalityCode] = useState(
+        initialOriginSelection.municipalityCode,
+    );
+    const [destinationDepartmentCode, setDestinationDepartmentCode] = useState(
+        initialDestinationSelection.departmentCode,
+    );
+    const [destinationMunicipalityCode, setDestinationMunicipalityCode] =
+        useState(initialDestinationSelection.municipalityCode);
+    const initialRoutePreview = hasRealRouteGeometry(transportRoute)
+        ? {
+              distance_km: transportRoute.distance_km,
+              estimated_duration_minutes:
+                  transportRoute.estimated_duration_minutes,
+              route_geometry: transportRoute.route_geometry,
+          }
+        : null;
+    const {
+        destinationPoint,
+        originPoint,
+        routePreview,
+        routePreviewError,
+        routePreviewState,
+    } = useRealRoutePreview(editForm.data, initialRoutePreview);
 
     const selectedVehicle = vehicleOptions.find(
         (vehicle) => String(vehicle.id) === String(editForm.data.vehicle_id),
     );
+    const selectPlace = (prefix, departmentCode, municipalityCode) => {
+        const department = findDepartment(departmentCode);
+        const municipality = findMunicipality(departmentCode, municipalityCode);
+
+        if (!department || !municipality) {
+            editForm.setData({
+                ...editForm.data,
+                [prefix]: '',
+                [`${prefix}_lat`]: '',
+                [`${prefix}_lng`]: '',
+            });
+
+            return;
+        }
+
+        editForm.setData({
+            ...editForm.data,
+            [prefix]: formatPlaceLabel(department, municipality),
+            [`${prefix}_lat`]: municipality.lat,
+            [`${prefix}_lng`]: municipality.lng,
+        });
+    };
     const canSubmit =
         editForm.data.vehicle_id &&
         editForm.data.origin.trim() &&
@@ -632,26 +1088,14 @@ function EditRouteForm({ transportRoute, vehicles, onCancel, onSuccess }) {
         (!selectedVehicle ||
             Number(editForm.data.available_capacity_kg) <=
                 Number(selectedVehicle.capacity_kg)) &&
-        editForm.data.permitted_cargo_type.trim();
-
-    const originPoint =
-        editForm.data.origin_lat && editForm.data.origin_lng
-            ? {
-                  lat: Number(editForm.data.origin_lat),
-                  lng: Number(editForm.data.origin_lng),
-              }
-            : null;
-    const destinationPoint =
-        editForm.data.destination_lat && editForm.data.destination_lng
-            ? {
-                  lat: Number(editForm.data.destination_lat),
-                  lng: Number(editForm.data.destination_lng),
-              }
-            : null;
+        editForm.data.permitted_cargo_type.trim() &&
+        routePreviewState === 'ready' &&
+        hasRealRouteGeometry(routePreview);
 
     return (
         <form
             className="mt-5 space-y-4 rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm"
+            noValidate
             onSubmit={(event) => {
                 event.preventDefault();
 
@@ -716,44 +1160,58 @@ function EditRouteForm({ transportRoute, vehicles, onCancel, onSuccess }) {
                 <FieldError message={editForm.errors.vehicle_id} />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                    <label
-                        htmlFor={`edit_origin_${transportRoute.id}`}
-                        className="text-sm font-medium text-slate-700"
-                    >
-                        Origen
-                    </label>
-                    <input
-                        id={`edit_origin_${transportRoute.id}`}
-                        required
-                        value={editForm.data.origin}
-                        onChange={(event) =>
-                            editForm.setData('origin', event.target.value)
-                        }
-                        className="mt-2 block w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
-                    />
-                    <FieldError message={editForm.errors.origin} />
-                </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+                <LocationSelector
+                    idPrefix={`edit_origin_${transportRoute.id}`}
+                    label="Origen"
+                    selectedDepartmentCode={originDepartmentCode}
+                    selectedMunicipalityCode={originMunicipalityCode}
+                    error={editForm.errors.origin}
+                    onDepartmentChange={(departmentCode) => {
+                        setOriginDepartmentCode(departmentCode);
+                        setOriginMunicipalityCode('');
+                        editForm.setData({
+                            ...editForm.data,
+                            origin: '',
+                            origin_lat: '',
+                            origin_lng: '',
+                        });
+                    }}
+                    onMunicipalityChange={(municipalityCode) => {
+                        setOriginMunicipalityCode(municipalityCode);
+                        selectPlace(
+                            'origin',
+                            originDepartmentCode,
+                            municipalityCode,
+                        );
+                    }}
+                />
 
-                <div>
-                    <label
-                        htmlFor={`edit_destination_${transportRoute.id}`}
-                        className="text-sm font-medium text-slate-700"
-                    >
-                        Destino
-                    </label>
-                    <input
-                        id={`edit_destination_${transportRoute.id}`}
-                        required
-                        value={editForm.data.destination}
-                        onChange={(event) =>
-                            editForm.setData('destination', event.target.value)
-                        }
-                        className="mt-2 block w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
-                    />
-                    <FieldError message={editForm.errors.destination} />
-                </div>
+                <LocationSelector
+                    idPrefix={`edit_destination_${transportRoute.id}`}
+                    label="Destino"
+                    selectedDepartmentCode={destinationDepartmentCode}
+                    selectedMunicipalityCode={destinationMunicipalityCode}
+                    error={editForm.errors.destination}
+                    onDepartmentChange={(departmentCode) => {
+                        setDestinationDepartmentCode(departmentCode);
+                        setDestinationMunicipalityCode('');
+                        editForm.setData({
+                            ...editForm.data,
+                            destination: '',
+                            destination_lat: '',
+                            destination_lng: '',
+                        });
+                    }}
+                    onMunicipalityChange={(municipalityCode) => {
+                        setDestinationMunicipalityCode(municipalityCode);
+                        selectPlace(
+                            'destination',
+                            destinationDepartmentCode,
+                            municipalityCode,
+                        );
+                    }}
+                />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -870,6 +1328,7 @@ function EditRouteForm({ transportRoute, vehicles, onCancel, onSuccess }) {
                     selectionMode={selectionMode}
                     originPoint={originPoint}
                     destinationPoint={destinationPoint}
+                    draftRoute={buildDraftRoute(editForm.data, routePreview)}
                     height="300px"
                     onSelectPoint={(point) => {
                         if (point.type === 'origin') {
@@ -909,6 +1368,22 @@ function EditRouteForm({ transportRoute, vehicles, onCancel, onSuccess }) {
 
                 <FieldError message={editForm.errors.origin_lat} />
                 <FieldError message={editForm.errors.destination_lat} />
+
+                <div
+                    className={`mt-3 rounded-2xl px-4 py-3 text-sm ${
+                        routePreviewState === 'ready'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : routePreviewState === 'error'
+                              ? 'bg-rose-100 text-rose-700'
+                              : 'bg-white text-slate-600'
+                    }`}
+                >
+                    {routePreviewMessage(
+                        routePreviewState,
+                        routePreviewError,
+                        routePreview,
+                    )}
+                </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -959,6 +1434,29 @@ function TransporterView({
                 }
             },
         });
+    };
+
+    const completeRoute = (transportRoute) => {
+        if (
+            !window.confirm(
+                `Marcar como completa la ruta ${transportRoute.origin} -> ${transportRoute.destination}? Los productores ya no la veran como disponible.`,
+            )
+        ) {
+            return;
+        }
+
+        router.patch(
+            route('transporter.routes.complete', transportRoute.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    if (editingRouteId === transportRoute.id) {
+                        setEditingRouteId(null);
+                    }
+                },
+            },
+        );
     };
 
     return (
@@ -1138,7 +1636,7 @@ function TransporterView({
                 <SectionTitle
                     eyebrow="Mapa"
                     title="Visualización de mis rutas"
-                    description="Aquí puedes ver en el mapa las rutas de retorno que tienen puntos de salida y llegada registrados."
+                    description="Aquí puedes ver en el mapa las rutas de retorno que tienen puntos de salida y llegada registrados. Cada ruta usa un color distinto para identificarla mejor."
                 />
 
                 <div className="mt-6">
@@ -1149,7 +1647,38 @@ function TransporterView({
                             route.destination_lat &&
                             route.destination_lng,
                     ) ? (
-                        <RouteMap routes={myRoutes} height="420px" />
+                        <div className="space-y-4">
+                            <RouteMap routes={myRoutes} height="420px" />
+                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                {myRoutes.map((transportRoute, index) => (
+                                    <div
+                                        key={transportRoute.id}
+                                        className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
+                                    >
+                                        <span
+                                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow"
+                                            style={{
+                                                backgroundColor:
+                                                    routeColor(index),
+                                            }}
+                                        >
+                                            {index + 1}
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="truncate font-semibold text-slate-900">
+                                                {transportRoute.origin} {'->'}{' '}
+                                                {transportRoute.destination}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-slate-500">
+                                                {formatDate(
+                                                    transportRoute.departure_at,
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     ) : (
                         <EmptyState message="Todavía no tienes rutas con puntos seleccionados en el mapa." />
                     )}
@@ -1165,7 +1694,7 @@ function TransporterView({
 
                 <div className="mt-6 grid gap-4">
                     {myRoutes.length ? (
-                        myRoutes.map((transportRoute) => (
+                        myRoutes.map((transportRoute, index) => (
                             <article
                                 key={transportRoute.id}
                                 className="interactive-lift rounded-3xl border border-slate-200 bg-slate-50 p-5 transition"
@@ -1173,6 +1702,16 @@ function TransporterView({
                                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                     <div>
                                         <div className="flex flex-wrap items-center gap-3">
+                                            <span
+                                                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white shadow"
+                                                style={{
+                                                    backgroundColor:
+                                                        routeColor(index),
+                                                }}
+                                                title={`Ruta ${index + 1} en el mapa`}
+                                            >
+                                                {index + 1}
+                                            </span>
                                             <h4 className="text-lg font-semibold text-slate-900">
                                                 {transportRoute.origin} {'->'}{' '}
                                                 {transportRoute.destination}
@@ -1210,9 +1749,46 @@ function TransporterView({
                                             Carga permitida:{' '}
                                             {transportRoute.permitted_cargo_type}
                                         </p>
+                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                            <div className="rounded-2xl border border-emerald-100 bg-white px-4 py-3">
+                                                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                                                    Tiempo aprox.
+                                                </p>
+                                                <p className="mt-1 text-xl font-semibold text-slate-900">
+                                                    {formatDuration(
+                                                        transportRoute.estimated_duration_minutes,
+                                                    )}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                                                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                                    Distancia
+                                                </p>
+                                                <p className="mt-1 text-xl font-semibold text-slate-900">
+                                                    {transportRoute.distance_km
+                                                        ? `${transportRoute.distance_km} km`
+                                                        : 'Pendiente'}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+                                        {transportRoute.stored_status !==
+                                        'completed' ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    completeRoute(
+                                                        transportRoute,
+                                                    )
+                                                }
+                                                className="inline-flex justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+                                            >
+                                                Ruta completa
+                                            </button>
+                                        ) : null}
+
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -1265,9 +1841,12 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
     const [searchFilters, setSearchFilters] = useState({
         origin: routeFilters.origin ?? '',
         destination: routeFilters.destination ?? '',
+        cargo_weight_kg: routeFilters.cargo_weight_kg ?? '',
     });
     const hasActiveSearch =
-        Boolean(routeFilters.origin) || Boolean(routeFilters.destination);
+        Boolean(routeFilters.origin) ||
+        Boolean(routeFilters.destination) ||
+        Boolean(routeFilters.cargo_weight_kg);
 
     const submitSearch = (event) => {
         event.preventDefault();
@@ -1277,6 +1856,10 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
             {
                 origin: searchFilters.origin.trim() || undefined,
                 destination: searchFilters.destination.trim() || undefined,
+                cargo_weight_kg:
+                    Number(searchFilters.cargo_weight_kg) > 0
+                        ? searchFilters.cargo_weight_kg
+                        : undefined,
             },
             {
                 preserveScroll: true,
@@ -1290,6 +1873,7 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
         setSearchFilters({
             origin: '',
             destination: '',
+            cargo_weight_kg: '',
         });
 
         router.get(
@@ -1313,7 +1897,8 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
                 />
 
                 <form
-                    className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr_auto]"
+                    className="mt-6 grid gap-4 xl:grid-cols-[1fr_1fr_0.8fr_auto]"
+                    noValidate
                     onSubmit={submitSearch}
                 >
                     <div>
@@ -1358,7 +1943,32 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
                         />
                     </div>
 
-                    <div className="flex flex-col gap-3 sm:flex-row lg:items-end">
+                    <div>
+                        <label
+                            htmlFor="search_cargo_weight"
+                            className="text-sm font-medium text-slate-700"
+                        >
+                            Peso de carga
+                        </label>
+                        <input
+                            id="search_cargo_weight"
+                            type="number"
+                            inputMode="decimal"
+                            min="1"
+                            step="0.01"
+                            value={searchFilters.cargo_weight_kg}
+                            onChange={(event) =>
+                                setSearchFilters((current) => ({
+                                    ...current,
+                                    cargo_weight_kg: event.target.value,
+                                }))
+                            }
+                            className="mt-2 block w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
+                            placeholder="Ej. 800 kg"
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:flex-row xl:items-end">
                         <button
                             type="submit"
                             className="interactive-lift inline-flex justify-center rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
@@ -1434,19 +2044,40 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
                                             transportRoute.permitted_cargo_type
                                         }
                                     </p>
-                                    {transportRoute.distance_km ||
-                                    transportRoute.estimated_duration_minutes ? (
-                                        <p className="mt-1 text-sm text-slate-600">
-                                            Recorrido:{' '}
-                                            {transportRoute.distance_km
-                                                ? `${transportRoute.distance_km} km`
-                                                : 'Distancia pendiente'}
-                                            {' - '}
-                                            {transportRoute.estimated_duration_minutes
-                                                ? `${transportRoute.estimated_duration_minutes} min`
-                                                : 'duracion pendiente'}
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                                            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                                                Tiempo aprox.
+                                            </p>
+                                            <p className="mt-1 text-2xl font-semibold text-slate-900">
+                                                {formatDuration(
+                                                    transportRoute.estimated_duration_minutes,
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                                            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                                Distancia
+                                            </p>
+                                            <p className="mt-1 text-2xl font-semibold text-slate-900">
+                                                {transportRoute.distance_km
+                                                    ? `${transportRoute.distance_km} km`
+                                                    : 'Pendiente'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 rounded-2xl border border-emerald-100 bg-white px-4 py-3">
+                                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                                            Costo estimado
                                         </p>
-                                    ) : null}
+                                        <p className="mt-2 text-xl font-semibold text-slate-900">
+                                            {transportRoute.estimated_cost
+                                                ? formatCurrency(
+                                                    transportRoute.estimated_cost,
+                                                )
+                                                : 'Ingresa el peso para estimar'}
+                                        </p>
+                                    </div>
                                     <div className="mt-4 overflow-hidden rounded-2xl border border-emerald-100 bg-white p-2">
                                         {hasRouteCoordinates(transportRoute) ? (
                                             <RouteMap
@@ -1462,7 +2093,13 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
                                     <Link
                                         href={route(
                                             'producer.routes.show',
-                                            transportRoute.id,
+                                            {
+                                                transportRoute:
+                                                    transportRoute.id,
+                                                cargo_weight_kg:
+                                                    routeFilters.cargo_weight_kg ||
+                                                    undefined,
+                                            },
                                         )}
                                         className="interactive-lift mt-4 inline-flex rounded-2xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
                                     >
