@@ -2,7 +2,7 @@ import RouteMap from '@/Components/RouteMap';
 import colombiaPlaces from '@/Data/colombiaPlaces';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const colombiaTimeZone = 'America/Bogota';
 
@@ -14,6 +14,7 @@ const statusLabels = {
     closed: 'Cerrada',
     confirmed: 'Confirmado',
     completed: 'Ruta completa',
+    departure_due: 'Hora de salir',
     pending: 'Pendiente',
     published: 'Publicada',
     in_progress: 'En camino',
@@ -347,6 +348,7 @@ function StatusBadge({ status }) {
         available: 'bg-emerald-100 text-emerald-700',
         confirmed: 'bg-emerald-100 text-emerald-700',
         completed: 'bg-slate-900 text-white',
+        departure_due: 'bg-orange-100 text-orange-700',
         in_progress: 'bg-sky-100 text-sky-700',
         pending: 'bg-amber-100 text-amber-700',
         published: 'bg-emerald-100 text-emerald-700',
@@ -411,6 +413,192 @@ function FlashMessages({ success, error }) {
                 </section>
             ) : null}
         </>
+    );
+}
+
+function DepartureConfirmationModal({
+    routeDue,
+    mode,
+    onStart,
+    onAskLater,
+    onCancelRoute,
+    onWait,
+    processing,
+}) {
+    if (!routeDue) {
+        return null;
+    }
+
+    return (
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-slate-950/50 px-3 py-4 backdrop-blur-sm sm:items-center">
+            <section className="animate-panel-rise w-full max-w-2xl overflow-hidden rounded-[1.75rem] border border-orange-200 bg-white shadow-[0_30px_90px_-30px_rgba(15,23,42,0.65)]">
+                <div className="bg-[linear-gradient(135deg,#f97316_0%,#15803d_100%)] px-6 py-6 text-white sm:px-8">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/80">
+                        Control de salida
+                    </p>
+                    <h3 className="mt-3 text-3xl font-bold">
+                        Ya es hora de salir
+                    </h3>
+                    <p className="mt-3 max-w-xl text-sm leading-6 text-white/90">
+                        Confirma si el vehiculo ya inicia el trayecto. La ruta
+                        solo cambiara a En camino cuando aceptes esta salida.
+                    </p>
+                </div>
+
+                <div className="space-y-5 px-6 py-6 sm:px-8">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <StatusBadge status={routeDue.status} />
+                            <span className="text-sm font-semibold text-slate-900">
+                                {routeDue.vehicle?.plate ?? 'Vehiculo sin placa'}
+                            </span>
+                        </div>
+                        <p className="mt-3 text-xl font-semibold text-slate-950">
+                            {routeDue.origin} {'->'} {routeDue.destination}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                            Salida programada: {formatDate(routeDue.departure_at)}
+                        </p>
+                    </div>
+
+                    {mode === 'delay' ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                            Deseas cancelar la ruta o esperar un poco mas?
+                        </div>
+                    ) : null}
+
+                    {mode === 'delay' ? (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <button
+                                type="button"
+                                onClick={onWait}
+                                disabled={processing}
+                                className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                            >
+                                Esperar un poco mas
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onCancelRoute}
+                                disabled={processing}
+                                className="inline-flex justify-center rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-60"
+                            >
+                                Cancelar ruta
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <button
+                                type="button"
+                                onClick={onStart}
+                                disabled={processing}
+                                className="inline-flex justify-center rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+                            >
+                                Si, iniciar ruta
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onAskLater}
+                                disabled={processing}
+                                className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                            >
+                                No, revisar opciones
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </section>
+        </div>
+    );
+}
+
+function RouteConflictFloatingCard({
+    conflict,
+    onCancelPreviousRoute,
+    onChooseAnotherVehicle,
+    onClose,
+    processing,
+}) {
+    if (!conflict) {
+        return null;
+    }
+
+    const vehicleLabel = [
+        conflict.vehicle?.vehicle_type,
+        conflict.vehicle?.plate,
+    ]
+        .filter(Boolean)
+        .join(' ');
+
+    return (
+        <div className="fixed inset-x-3 bottom-4 z-[950] mx-auto max-w-xl sm:inset-x-auto sm:right-5">
+            <section className="animate-panel-rise overflow-hidden rounded-[1.5rem] border border-amber-200 bg-white shadow-[0_24px_70px_-28px_rgba(15,23,42,0.75)]">
+                <div className="bg-amber-50 px-5 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+                                Cruce de horario
+                            </p>
+                            <h3 className="mt-2 text-lg font-semibold text-slate-950">
+                                Ya tienes una ruta pendiente en este intervalo
+                            </h3>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-full border border-amber-200 bg-white px-3 py-1 text-sm font-semibold text-slate-600 transition hover:bg-amber-100"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-amber-900">
+                        Con el vehiculo {vehicleLabel || 'seleccionado'} ya hay
+                        una ruta publicada en otro lugar. Cancela la ruta
+                        anterior o selecciona otro vehiculo para publicarla.
+                    </p>
+                </div>
+
+                <div className="space-y-4 px-5 py-5">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <StatusBadge status={conflict.status} />
+                            <span className="text-sm font-semibold text-slate-800">
+                                {vehicleLabel || 'Vehiculo seleccionado'}
+                            </span>
+                        </div>
+                        <p className="mt-3 text-base font-semibold text-slate-950">
+                            {conflict.origin} {'->'} {conflict.destination}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                            Salida: {formatDate(conflict.departure_at)}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600">
+                            Tiempo estimado:{' '}
+                            {formatDuration(conflict.estimated_duration_minutes)}
+                        </p>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <button
+                            type="button"
+                            onClick={onCancelPreviousRoute}
+                            disabled={processing}
+                            className="inline-flex justify-center rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-60"
+                        >
+                            Cancelar ruta anterior
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onChooseAnotherVehicle}
+                            disabled={processing}
+                            className="inline-flex justify-center rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+                        >
+                            Elegir otro vehiculo
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
     );
 }
 
@@ -577,6 +765,7 @@ function ServiceCard({ service }) {
 }
 
 function PublishRouteForm({ vehicles, transporterProfile }) {
+    const { routeConflict } = usePage().props;
     const approvedVehicles = vehicles.filter(
         (vehicle) => vehicle.status === 'available',
     );
@@ -592,8 +781,11 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
         available_capacity_kg: '',
         permitted_cargo_type: '',
     });
+    const conflictActionForm = useForm({});
+    const vehicleSelectRef = useRef(null);
 
     const [selectionMode, setSelectionMode] = useState('origin');
+    const [hideRouteConflict, setHideRouteConflict] = useState(false);
     const [originDepartmentCode, setOriginDepartmentCode] = useState('');
     const [originMunicipalityCode, setOriginMunicipalityCode] = useState('');
     const [destinationDepartmentCode, setDestinationDepartmentCode] =
@@ -649,9 +841,64 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
         routeForm.data.permitted_cargo_type.trim() &&
         routePreviewState === 'ready' &&
         hasRealRouteGeometry(routePreview);
+    const visibleRouteConflict =
+        routeConflict && !hideRouteConflict ? routeConflict : null;
+
+    useEffect(() => {
+        if (routeConflict) {
+            setHideRouteConflict(false);
+        }
+    }, [routeConflict]);
+
+    const chooseAnotherVehicle = () => {
+        const alternativeVehicle = approvedVehicles.find(
+            (vehicle) =>
+                String(vehicle.id) !==
+                String(visibleRouteConflict?.vehicle?.id ?? ''),
+        );
+
+        if (alternativeVehicle) {
+            routeForm.setData('vehicle_id', alternativeVehicle.id);
+            routeForm.clearErrors('vehicle_id');
+        }
+
+        setHideRouteConflict(true);
+        vehicleSelectRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+        });
+        vehicleSelectRef.current?.focus();
+    };
 
     return (
         <article className={cardClassName()}>
+            <RouteConflictFloatingCard
+                conflict={visibleRouteConflict}
+                processing={conflictActionForm.processing}
+                onCancelPreviousRoute={() => {
+                    if (!visibleRouteConflict) {
+                        return;
+                    }
+
+                    conflictActionForm.patch(
+                        route(
+                            'transporter.routes.cancel',
+                            visibleRouteConflict.id,
+                        ),
+                        {},
+                        {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                routeForm.clearErrors('vehicle_id');
+                                setHideRouteConflict(true);
+                            },
+                        },
+                    );
+                }}
+                onChooseAnotherVehicle={chooseAnotherVehicle}
+                onClose={() => setHideRouteConflict(true)}
+            />
+
             <SectionTitle
                 eyebrow="Rutas"
                 title="Publicar ruta de retorno"
@@ -699,7 +946,7 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
                             );
                         },
                         onError: () => {
-                            alert('No se pudo publicar la ruta. Revisa los datos e intenta de nuevo.');
+                            setHideRouteConflict(false);
                         },
                     });
                 }}
@@ -713,6 +960,7 @@ function PublishRouteForm({ vehicles, transporterProfile }) {
                     </label>
                     <select
                         id="vehicle_id"
+                        ref={vehicleSelectRef}
                         required
                         value={routeForm.data.vehicle_id}
                         onChange={(event) =>
@@ -1415,7 +1663,56 @@ function TransporterView({
     confirmedServices,
 }) {
     const requestDecisionForm = useForm({});
+    const routeLifecycleForm = useForm({});
     const [editingRouteId, setEditingRouteId] = useState(null);
+    const [dismissedDepartureRouteIds, setDismissedDepartureRouteIds] =
+        useState([]);
+    const [departurePromptMode, setDeparturePromptMode] = useState('confirm');
+    const routeDue = myRoutes.find(
+        (transportRoute) =>
+            transportRoute.status === 'departure_due' &&
+            !dismissedDepartureRouteIds.includes(transportRoute.id),
+    );
+    const activeMapRoutes = myRoutes.filter(
+        (transportRoute) =>
+            transportRoute.stored_status !== 'cancelled' &&
+            transportRoute.origin_lat &&
+            transportRoute.origin_lng &&
+            transportRoute.destination_lat &&
+            transportRoute.destination_lng,
+    );
+
+    useEffect(() => {
+        try {
+            const storedIds = JSON.parse(
+                window.sessionStorage.getItem('flety:departure-dismissed') ??
+                    '[]',
+            );
+
+            if (Array.isArray(storedIds)) {
+                setDismissedDepartureRouteIds(storedIds);
+            }
+        } catch {
+            setDismissedDepartureRouteIds([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (routeDue) {
+            setDeparturePromptMode('confirm');
+        }
+    }, [routeDue?.id]);
+
+    const dismissDeparturePrompt = (routeId) => {
+        const nextIds = [...new Set([...dismissedDepartureRouteIds, routeId])];
+
+        setDismissedDepartureRouteIds(nextIds);
+        window.sessionStorage.setItem(
+            'flety:departure-dismissed',
+            JSON.stringify(nextIds),
+        );
+        setDeparturePromptMode('confirm');
+    };
 
     const deleteRoute = (transportRoute) => {
         if (
@@ -1459,8 +1756,56 @@ function TransporterView({
         );
     };
 
+    const startRoute = (transportRoute) => {
+        routeLifecycleForm.patch(
+            route('transporter.routes.start', transportRoute.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    if (editingRouteId === transportRoute.id) {
+                        setEditingRouteId(null);
+                    }
+                },
+            },
+        );
+    };
+
+    const cancelRoute = (transportRoute) => {
+        if (
+            !window.confirm(
+                `Cancelar la ruta ${transportRoute.origin} -> ${transportRoute.destination}? Los productores ya no la veran como disponible.`,
+            )
+        ) {
+            return;
+        }
+
+        routeLifecycleForm.patch(
+            route('transporter.routes.cancel', transportRoute.id),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    if (editingRouteId === transportRoute.id) {
+                        setEditingRouteId(null);
+                    }
+                },
+            },
+        );
+    };
+
     return (
         <>
+            <DepartureConfirmationModal
+                routeDue={routeDue}
+                mode={departurePromptMode}
+                processing={routeLifecycleForm.processing}
+                onStart={() => startRoute(routeDue)}
+                onAskLater={() => setDeparturePromptMode('delay')}
+                onCancelRoute={() => cancelRoute(routeDue)}
+                onWait={() => dismissDeparturePrompt(routeDue.id)}
+            />
+
             <section className={cardClassName()}>
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -1640,17 +1985,11 @@ function TransporterView({
                 />
 
                 <div className="mt-6">
-                    {myRoutes.some(
-                        (route) =>
-                            route.origin_lat &&
-                            route.origin_lng &&
-                            route.destination_lat &&
-                            route.destination_lng,
-                    ) ? (
+                    {activeMapRoutes.length ? (
                         <div className="space-y-4">
-                            <RouteMap routes={myRoutes} height="420px" />
+                            <RouteMap routes={activeMapRoutes} height="420px" />
                             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                {myRoutes.map((transportRoute, index) => (
+                                {activeMapRoutes.map((transportRoute, index) => (
                                     <div
                                         key={transportRoute.id}
                                         className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
@@ -1694,7 +2033,13 @@ function TransporterView({
 
                 <div className="mt-6 grid gap-4">
                     {myRoutes.length ? (
-                        myRoutes.map((transportRoute, index) => (
+                        myRoutes.map((transportRoute) => {
+                            const mapRouteIndex = activeMapRoutes.findIndex(
+                                (mapRoute) => mapRoute.id === transportRoute.id,
+                            );
+                            const isShownInMap = mapRouteIndex >= 0;
+
+                            return (
                             <article
                                 key={transportRoute.id}
                                 className="interactive-lift rounded-3xl border border-slate-200 bg-slate-50 p-5 transition"
@@ -1705,12 +2050,19 @@ function TransporterView({
                                             <span
                                                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white shadow"
                                                 style={{
-                                                    backgroundColor:
-                                                        routeColor(index),
+                                                    backgroundColor: isShownInMap
+                                                        ? routeColor(mapRouteIndex)
+                                                        : '#94a3b8',
                                                 }}
-                                                title={`Ruta ${index + 1} en el mapa`}
+                                                title={
+                                                    isShownInMap
+                                                        ? `Ruta ${mapRouteIndex + 1} en el mapa`
+                                                        : 'Esta ruta no se muestra en el mapa'
+                                                }
                                             >
-                                                {index + 1}
+                                                {isShownInMap
+                                                    ? mapRouteIndex + 1
+                                                    : '-'}
                                             </span>
                                             <h4 className="text-lg font-semibold text-slate-900">
                                                 {transportRoute.origin} {'->'}{' '}
@@ -1774,8 +2126,24 @@ function TransporterView({
                                     </div>
 
                                     <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
-                                        {transportRoute.stored_status !==
-                                        'completed' ? (
+                                        {transportRoute.status ===
+                                        'departure_due' ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    startRoute(transportRoute)
+                                                }
+                                                disabled={
+                                                    routeLifecycleForm.processing
+                                                }
+                                                className="inline-flex justify-center rounded-2xl bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:opacity-60"
+                                            >
+                                                Iniciar ruta
+                                            </button>
+                                        ) : null}
+
+                                        {transportRoute.stored_status ===
+                                        'in_progress' ? (
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -1827,7 +2195,8 @@ function TransporterView({
                                     />
                                 ) : null}
                             </article>
-                        ))
+                            );
+                        })
                     ) : (
                         <EmptyState message="Aun no has publicado rutas." />
                     )}
