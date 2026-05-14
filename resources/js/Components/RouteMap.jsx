@@ -126,6 +126,83 @@ function createNumberedMarkerIcon(color, number) {
     });
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function createEndpointMarkerIcon(color, label, title, align = 'right') {
+    const safeLabel = escapeHtml(label);
+    const safeTitle = escapeHtml(title);
+    const isLeftAligned = align === 'left';
+
+    return L.divIcon({
+        className: '',
+        html: `
+            <div style="
+                align-items:center;
+                display:flex;
+                flex-direction:${isLeftAligned ? 'row-reverse' : 'row'};
+                gap:10px;
+                justify-content:${isLeftAligned ? 'flex-end' : 'flex-start'};
+                max-width:190px;
+                pointer-events:none;
+            ">
+                <div style="
+                    align-items:center;
+                    background:${color};
+                    border:3px solid white;
+                    border-radius:999px;
+                    box-shadow:0 12px 28px rgba(15,23,42,.24);
+                    display:flex;
+                    height:34px;
+                    justify-content:center;
+                    width:34px;
+                ">
+                    <div style="
+                        background:white;
+                        border-radius:999px;
+                        height:10px;
+                        width:10px;
+                    "></div>
+                </div>
+                <div style="
+                    background:white;
+                    border:1px solid rgba(17,94,49,.14);
+                    border-radius:10px;
+                    box-shadow:0 14px 32px rgba(15,23,42,.16);
+                    color:#203029;
+                    min-width:108px;
+                    padding:8px 10px;
+                ">
+                    <div style="
+                        color:#087443;
+                        font-size:11px;
+                        font-weight:800;
+                        line-height:1;
+                        margin-bottom:5px;
+                    ">${safeLabel}</div>
+                    <div style="
+                        font-size:12px;
+                        font-weight:700;
+                        line-height:1.25;
+                        max-width:132px;
+                        overflow:hidden;
+                        text-overflow:ellipsis;
+                        white-space:nowrap;
+                    ">${safeTitle}</div>
+                </div>
+            </div>
+        `,
+        iconAnchor: [isLeftAligned ? 173 : 17, 17],
+        iconSize: [190, 52],
+    });
+}
+
 function FitRouteBounds({ routes, originPoint, destinationPoint, draftRoute }) {
     const map = useMap();
 
@@ -169,6 +246,7 @@ export default function RouteMap({
     onSelectPoint = null,
     draftRoute = null,
     height = '360px',
+    markerDisplay = 'numbered',
 }) {
     const validRoutes = routes.filter(
         (route) =>
@@ -188,7 +266,7 @@ export default function RouteMap({
     }
 
     return (
-        <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+        <div className="min-w-0 max-w-full overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
             <MapContainer
                 center={center}
                 zoom={6}
@@ -264,17 +342,25 @@ export default function RouteMap({
                     const positions = routePositions(route);
                     const color = routeColor(index);
                     const routeNumber = index + 1;
-                    const originIcon = createNumberedMarkerIcon(
-                        color,
-                        routeNumber,
-                    );
+                    const useEndpointLabels =
+                        markerDisplay === 'endpoint-labels' &&
+                        validRoutes.length === 1;
+                    const originIcon = useEndpointLabels
+                        ? createEndpointMarkerIcon(color, 'Origen', route.origin)
+                        : createNumberedMarkerIcon(color, routeNumber);
+                    const destinationIcon = useEndpointLabels
+                        ? createEndpointMarkerIcon(
+                            color,
+                            'Destino',
+                            route.destination,
+                            'left',
+                        )
+                        : originIcon;
 
                     return (
                         <Fragment key={route.id}>
                             <Marker position={straightPositions[0]} icon={originIcon}>
                                 <Popup>
-                                    <strong>Ruta {routeNumber}</strong>
-                                    <br />
                                     <strong>Salida:</strong> {route.origin}
                                     <br />
                                     <strong>Destino:</strong>{' '}
@@ -285,10 +371,11 @@ export default function RouteMap({
                                 </Popup>
                             </Marker>
 
-                            <Marker position={straightPositions[1]} icon={originIcon}>
+                            <Marker
+                                position={straightPositions[1]}
+                                icon={destinationIcon}
+                            >
                                 <Popup>
-                                    <strong>Ruta {routeNumber}</strong>
-                                    <br />
                                     <strong>Llegada:</strong>{' '}
                                     {route.destination}
                                     <br />

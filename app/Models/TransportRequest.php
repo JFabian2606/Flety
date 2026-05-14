@@ -20,6 +20,7 @@ class TransportRequest extends Model
         'producer_id',
         'cargo_weight_kg',
         'product_type',
+        'product_category',
         'delivery_destination',
         'estimated_cost',
         'requested_at',

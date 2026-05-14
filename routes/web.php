@@ -39,6 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/transportista/rutas', [TransportRouteController::class, 'transporterIndex'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.index');
+    Route::get('/transportista/solicitudes', [TransportRequestController::class, 'transporterIndex'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.requests.index');
     Route::post('/transportista/rutas/previsualizar', [TransportRouteController::class, 'preview'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.preview');
@@ -54,6 +57,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/transportista/rutas/{transportRoute}/completar', [TransportRouteController::class, 'complete'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.complete');
+    Route::patch('/transportista/rutas/{transportRoute}/iniciar', [TransportRouteController::class, 'start'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.routes.start');
+    Route::patch('/transportista/rutas/{transportRoute}/cancelar', [TransportRouteController::class, 'cancel'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.routes.cancel');
     Route::delete('/transportista/rutas/{transportRoute}', [TransportRouteController::class, 'destroy'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.destroy');
@@ -73,6 +82,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/productor/rutas', [TransportRouteController::class, 'producerIndex'])
         ->middleware(['verified', 'role:productor'])
         ->name('producer.routes.index');
+    Route::get('/productor/transportistas/{transporter}', [TransportRouteController::class, 'producerTransporterShow'])
+        ->middleware(['verified', 'role:productor'])
+        ->name('producer.transporters.show');
     Route::get('/productor/rutas/{transportRoute}', [TransportRouteController::class, 'producerShow'])
         ->middleware(['verified', 'role:productor'])
         ->name('producer.routes.show');
