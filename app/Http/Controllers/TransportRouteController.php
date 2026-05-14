@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTransportRouteRequest;
 use App\Http\Requests\UpdateTransportRouteRequest;
 use App\Models\Service;
+use App\Models\Transporter;
 use App\Models\TransportRequest;
 use App\Models\TransportRoute;
 use App\Services\OpenRouteService;
@@ -46,6 +47,7 @@ class TransportRouteController extends Controller
                     'destination_lng' => $route->destination_lng !== null ? (float) $route->destination_lng : null,
                     'departure_at' => $route->departure_at?->toIso8601String(),
                     'available_capacity_kg' => (float) $route->available_capacity_kg,
+                    'min_cargo_weight_kg' => (float) $route->min_cargo_weight_kg,
                     'distance_km' => $route->distance_km !== null ? (float) $route->distance_km : null,
                     'estimated_duration_minutes' => $route->estimated_duration_minutes,
                     'route_geometry' => $route->route_geometry,
@@ -100,6 +102,9 @@ class TransportRouteController extends Controller
             'cargo_weight_kg' => $request->filled('cargo_weight_kg') && (float) $request->input('cargo_weight_kg') > 0
                 ? (float) $request->input('cargo_weight_kg')
                 : null,
+            'product_category' => in_array($request->string('product_category')->toString(), ['resistant', 'sensitive', 'delicate', 'very_delicate'], true)
+                ? $request->string('product_category')->toString()
+                : null,
         ];
         $costEstimator = app(TransportCostEstimator::class);
 
@@ -116,7 +121,9 @@ class TransportRouteController extends Controller
             ->when($routeFilters['destination'] !== '', fn (Builder $query) => $query
                 ->where('destination', 'like', '%'.$routeFilters['destination'].'%'))
             ->when($routeFilters['cargo_weight_kg'], fn (Builder $query) => $query
-                ->where('available_capacity_kg', '>=', $routeFilters['cargo_weight_kg']))
+                ->where('available_capacity_kg', '>=', $routeFilters['cargo_weight_kg'])
+                ->where('min_cargo_weight_kg', '<=', $routeFilters['cargo_weight_kg']))
+            ->whereColumn('available_capacity_kg', '>=', 'min_cargo_weight_kg')
             ->orderBy('departure_at')
             ->limit(50)
             ->get()
@@ -133,9 +140,10 @@ class TransportRouteController extends Controller
                     'destination_lng' => $route->destination_lng !== null ? (float) $route->destination_lng : null,
                     'departure_at' => $route->departure_at?->toIso8601String(),
                     'available_capacity_kg' => (float) $route->available_capacity_kg,
+                    'min_cargo_weight_kg' => (float) $route->min_cargo_weight_kg,
                     'distance_km' => $distanceKm,
                     'estimated_duration_minutes' => $route->estimated_duration_minutes,
-                    'estimated_cost' => $costEstimator->estimate($distanceKm, $routeFilters['cargo_weight_kg']),
+                    'estimated_cost' => $costEstimator->estimate($distanceKm, $routeFilters['cargo_weight_kg'], null, $routeFilters['product_category']),
                     'route_geometry' => $route->route_geometry,
                     'permitted_cargo_type' => $route->permitted_cargo_type,
                     'status' => $route->operationalStatus(),
@@ -146,6 +154,7 @@ class TransportRouteController extends Controller
                         'capacity_kg' => (float) $route->vehicle->capacity_kg,
                     ] : null,
                     'transporter' => $route->transporter?->user ? [
+                        'id' => $route->transporter->id,
                         'name' => $route->transporter->user->name,
                     ] : null,
                 ];
@@ -160,6 +169,7 @@ class TransportRouteController extends Controller
                     'id' => $transportRequest->id,
                     'cargo_weight_kg' => (float) $transportRequest->cargo_weight_kg,
                     'product_type' => $transportRequest->product_type,
+                    'product_category' => $transportRequest->product_category,
                     'delivery_destination' => $transportRequest->delivery_destination,
                     'estimated_cost' => $transportRequest->estimated_cost !== null ? (float) $transportRequest->estimated_cost : null,
                     'status' => $transportRequest->status,
@@ -219,6 +229,7 @@ class TransportRouteController extends Controller
         abort_if(
             $transportRoute->status !== TransportRoute::STATUS_PUBLISHED ||
             $transportRoute->departure_at <= now() ||
+            (float) $transportRoute->available_capacity_kg < (float) $transportRoute->min_cargo_weight_kg ||
             ! $transportRoute->transporter?->isValidated(),
             404
         );
@@ -226,7 +237,15 @@ class TransportRouteController extends Controller
         $cargoWeightKg = $request->filled('cargo_weight_kg') && (float) $request->input('cargo_weight_kg') > 0
             ? min((float) $request->input('cargo_weight_kg'), (float) $transportRoute->available_capacity_kg)
             : null;
-        $estimatedCost = app(TransportCostEstimator::class)->estimate($transportRoute->distance_km, $cargoWeightKg);
+        $productCategory = in_array($request->string('product_category')->toString(), ['resistant', 'sensitive', 'delicate', 'very_delicate'], true)
+            ? $request->string('product_category')->toString()
+            : null;
+        $estimatedCost = app(TransportCostEstimator::class)->estimate(
+            $transportRoute->distance_km,
+            $cargoWeightKg,
+            null,
+            $productCategory,
+        );
 
         return Inertia::render('Routes/Show', [
             'transportRoute' => [
@@ -239,10 +258,12 @@ class TransportRouteController extends Controller
                 'destination_lng' => $transportRoute->destination_lng !== null ? (float) $transportRoute->destination_lng : null,
                 'departure_at' => $transportRoute->departure_at?->toIso8601String(),
                 'available_capacity_kg' => (float) $transportRoute->available_capacity_kg,
+                'min_cargo_weight_kg' => (float) $transportRoute->min_cargo_weight_kg,
                 'distance_km' => $transportRoute->distance_km !== null ? (float) $transportRoute->distance_km : null,
                 'estimated_duration_minutes' => $transportRoute->estimated_duration_minutes,
                 'estimated_cost' => $estimatedCost,
                 'cost_estimate_weight_kg' => $cargoWeightKg,
+                'cost_estimate_product_category' => $productCategory,
                 'route_geometry' => $transportRoute->route_geometry,
                 'permitted_cargo_type' => $transportRoute->permitted_cargo_type,
                 'status' => $transportRoute->operationalStatus(),
@@ -253,8 +274,62 @@ class TransportRouteController extends Controller
                     'capacity_kg' => (float) $transportRoute->vehicle->capacity_kg,
                 ] : null,
                 'transporter' => $transportRoute->transporter?->user ? [
+                    'id' => $transportRoute->transporter->id,
                     'name' => $transportRoute->transporter->user->name,
                 ] : null,
+            ],
+        ]);
+    }
+
+    public function producerTransporterShow(Request $request, Transporter $transporter): Response
+    {
+        $transporter->loadMissing([
+            'user:id,name,phone',
+            'vehicles' => fn ($query) => $query
+                ->select('id', 'transporter_id', 'plate', 'vehicle_type', 'capacity_kg', 'status')
+                ->orderBy('vehicle_type')
+                ->orderBy('plate'),
+        ]);
+
+        abort_if(! $transporter->isValidated(), 404);
+
+        $activeRoutes = TransportRoute::query()
+            ->with('vehicle:id,plate,vehicle_type,capacity_kg')
+            ->where('transporter_id', $transporter->id)
+            ->where('status', TransportRoute::STATUS_PUBLISHED)
+            ->where('departure_at', '>', now())
+            ->orderBy('departure_at')
+            ->take(6)
+            ->get();
+
+        return Inertia::render('Producer/TransporterProfile', [
+            'transporter' => [
+                'id' => $transporter->id,
+                'name' => $transporter->user?->name,
+                'validation_status' => $transporter->validation_status,
+                'rating_average' => (float) $transporter->rating_average,
+                'active_routes_count' => $activeRoutes->count(),
+                'vehicles_count' => $transporter->vehicles->count(),
+                'vehicles' => $transporter->vehicles->map(fn ($vehicle) => [
+                    'id' => $vehicle->id,
+                    'plate' => $vehicle->plate,
+                    'vehicle_type' => $vehicle->vehicle_type,
+                    'capacity_kg' => (float) $vehicle->capacity_kg,
+                    'status' => $vehicle->status,
+                ])->values(),
+                'active_routes' => $activeRoutes->map(fn (TransportRoute $route) => [
+                    'id' => $route->id,
+                    'origin' => $route->origin,
+                    'destination' => $route->destination,
+                    'departure_at' => $route->departure_at?->toIso8601String(),
+                    'available_capacity_kg' => (float) $route->available_capacity_kg,
+                    'min_cargo_weight_kg' => (float) $route->min_cargo_weight_kg,
+                    'permitted_cargo_type' => $route->permitted_cargo_type,
+                    'vehicle' => $route->vehicle ? [
+                        'plate' => $route->vehicle->plate,
+                        'vehicle_type' => $route->vehicle->vehicle_type,
+                    ] : null,
+                ])->values(),
             ],
         ]);
     }
@@ -329,10 +404,11 @@ class TransportRouteController extends Controller
             'destination_lng' => $destinationLng,
             'departure_at' => $departureAt,
             'available_capacity_kg' => $request->input('available_capacity_kg'),
+            'min_cargo_weight_kg' => $request->input('min_cargo_weight_kg'),
             'distance_km' => $routeMapData['distance_km'],
             'estimated_duration_minutes' => $routeMapData['estimated_duration_minutes'],
             'route_geometry' => $routeMapData['route_geometry'],
-            'permitted_cargo_type' => $request->string('permitted_cargo_type')->toString(),
+            'permitted_cargo_type' => 'Carga definida por el productor',
             'status' => TransportRoute::STATUS_PUBLISHED,
         ]);
 
@@ -381,10 +457,11 @@ class TransportRouteController extends Controller
             'destination_lng' => $destinationLng,
             'departure_at' => $departureAt,
             'available_capacity_kg' => $request->input('available_capacity_kg'),
+            'min_cargo_weight_kg' => $request->input('min_cargo_weight_kg'),
             'distance_km' => $routeMapData['distance_km'],
             'estimated_duration_minutes' => $routeMapData['estimated_duration_minutes'],
             'route_geometry' => $routeMapData['route_geometry'],
-            'permitted_cargo_type' => $request->string('permitted_cargo_type')->toString(),
+            'permitted_cargo_type' => 'Carga definida por el productor',
         ]);
 
         return back()->with('success', 'Ruta actualizada correctamente.');
@@ -505,6 +582,7 @@ class TransportRouteController extends Controller
             ] : null,
             'request' => $service->transportRequest ? [
                 'product_type' => $service->transportRequest->product_type,
+                'product_category' => $service->transportRequest->product_category,
                 'cargo_weight_kg' => (float) $service->transportRequest->cargo_weight_kg,
                 'delivery_destination' => $service->transportRequest->delivery_destination,
                 'estimated_cost' => $service->transportRequest->estimated_cost !== null ? (float) $service->transportRequest->estimated_cost : null,
@@ -546,6 +624,7 @@ class TransportRouteController extends Controller
             ] : null,
             'request' => $service->transportRequest ? [
                 'product_type' => $service->transportRequest->product_type,
+                'product_category' => $service->transportRequest->product_category,
                 'cargo_weight_kg' => (float) $service->transportRequest->cargo_weight_kg,
                 'delivery_destination' => $service->transportRequest->delivery_destination,
                 'estimated_cost' => $service->transportRequest->estimated_cost !== null ? (float) $service->transportRequest->estimated_cost : null,

@@ -49,6 +49,7 @@ return new class extends Migration
             $table->string('destination');
             $table->dateTime('departure_at')->index();
             $table->decimal('available_capacity_kg', 10, 2);
+            $table->decimal('min_cargo_weight_kg', 10, 2)->default(1);
             $table->string('permitted_cargo_type', 100);
             $table->string('status', 30)->default('published')->index();
             $table->timestamps();
@@ -60,6 +61,7 @@ return new class extends Migration
             $table->foreignId('producer_id')->constrained()->cascadeOnDelete();
             $table->decimal('cargo_weight_kg', 10, 2);
             $table->string('product_type', 100);
+            $table->string('product_category', 30)->default('resistant');
             $table->string('delivery_destination');
             $table->decimal('estimated_cost', 12, 2)->nullable();
             $table->timestamp('requested_at')->useCurrent();

@@ -31,6 +31,7 @@ class TransportRoute extends Model
         'destination_lng',
         'departure_at',
         'available_capacity_kg',
+        'min_cargo_weight_kg',
         'distance_km',
         'estimated_duration_minutes',
         'permitted_cargo_type',
@@ -43,6 +44,7 @@ class TransportRoute extends Model
         return [
             'departure_at' => 'datetime',
             'available_capacity_kg' => 'decimal:2',
+            'min_cargo_weight_kg' => 'decimal:2',
             'origin_lat' => 'decimal:7',
             'origin_lng' => 'decimal:7',
             'destination_lat' => 'decimal:7',

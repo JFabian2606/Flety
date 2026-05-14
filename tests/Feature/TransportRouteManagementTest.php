@@ -186,7 +186,7 @@ class TransportRouteManagementTest extends TestCase
             'vehicle_id' => $vehicle->id,
             'origin' => 'Neiva',
             'destination' => 'Ibague',
-            'permitted_cargo_type' => 'Cafe',
+            'permitted_cargo_type' => 'Carga definida por el productor',
             'status' => TransportRoute::STATUS_PUBLISHED,
         ]);
     }
@@ -277,7 +277,7 @@ class TransportRouteManagementTest extends TestCase
             'origin' => 'Tunja Centro',
             'destination' => 'Bogota Corabastos',
             'available_capacity_kg' => 700,
-            'permitted_cargo_type' => 'Papa criolla',
+            'permitted_cargo_type' => 'Carga definida por el productor',
             'status' => TransportRoute::STATUS_PUBLISHED,
         ]);
 
@@ -546,6 +546,7 @@ class TransportRouteManagementTest extends TestCase
             ->post(route('producer.transport-requests.store'), [
                 'transport_route_id' => $route->id,
                 'cargo_weight_kg' => 450,
+                'product_category' => 'resistant',
                 'product_type' => 'Cafe',
                 'delivery_destination' => 'Mosquera',
                 'estimated_cost' => 180000,
@@ -570,6 +571,7 @@ class TransportRouteManagementTest extends TestCase
             ->post(route('producer.transport-requests.store'), [
                 'transport_route_id' => $route->id,
                 'cargo_weight_kg' => '',
+                'product_category' => '',
                 'product_type' => '',
                 'delivery_destination' => '',
             ])
@@ -577,6 +579,7 @@ class TransportRouteManagementTest extends TestCase
             ->assertSessionHasErrors([
                 'cargo_weight_kg',
                 'product_type',
+                'product_category',
                 'delivery_destination',
             ]);
 
@@ -592,6 +595,7 @@ class TransportRouteManagementTest extends TestCase
             ->post(route('producer.transport-requests.store'), [
                 'transport_route_id' => $route->id,
                 'cargo_weight_kg' => 450,
+                'product_category' => 'sensitive',
                 'product_type' => '  Cafe pergamino  ',
                 'delivery_destination' => '  Mosquera centro  ',
             ])
@@ -601,6 +605,7 @@ class TransportRouteManagementTest extends TestCase
             'transport_route_id' => $route->id,
             'producer_id' => $producer->producerProfile->id,
             'cargo_weight_kg' => 450,
+            'product_category' => 'sensitive',
             'product_type' => 'Cafe pergamino',
             'delivery_destination' => 'Mosquera centro',
             'status' => TransportRequest::STATUS_PENDING,
@@ -618,6 +623,7 @@ class TransportRouteManagementTest extends TestCase
             ->post(route('producer.transport-requests.store'), [
                 'transport_route_id' => $route->id,
                 'cargo_weight_kg' => 500,
+                'product_category' => 'resistant',
                 'product_type' => 'Cafe',
                 'delivery_destination' => 'Mosquera',
             ])
@@ -627,7 +633,59 @@ class TransportRouteManagementTest extends TestCase
             'transport_route_id' => $route->id,
             'producer_id' => $producer->producerProfile->id,
             'cargo_weight_kg' => 500,
-            'estimated_cost' => 279000,
+            'estimated_cost' => 308000,
+        ]);
+    }
+
+    public function test_producer_cannot_request_less_than_route_minimum_weight(): void
+    {
+        $route = $this->createPublishedRoute([
+            'min_cargo_weight_kg' => 300,
+            'available_capacity_kg' => 900,
+        ], 'minimum-weight-route@example.com');
+        $producer = $this->createProducerUser('minimum-weight-producer@example.com');
+
+        $this->actingAs($producer)
+            ->from(route('producer.routes.show', $route))
+            ->post(route('producer.transport-requests.store'), [
+                'transport_route_id' => $route->id,
+                'cargo_weight_kg' => 250,
+                'product_category' => 'resistant',
+                'product_type' => 'Papa',
+                'delivery_destination' => 'Funza',
+            ])
+            ->assertRedirect(route('producer.routes.show', $route))
+            ->assertSessionHasErrors(['cargo_weight_kg']);
+
+        $this->assertDatabaseCount('transport_requests', 0);
+    }
+
+    public function test_transport_cost_estimate_uses_mvp_profitability_formula(): void
+    {
+        $route = $this->createPublishedRoute([
+            'distance_km' => 99.32,
+            'min_cargo_weight_kg' => 100,
+            'available_capacity_kg' => 455,
+            'permitted_cargo_type' => 'Fresa',
+        ], 'mvp-cost-route@example.com');
+        $producer = $this->createProducerUser('mvp-cost-producer@example.com');
+
+        $this->actingAs($producer)
+            ->post(route('producer.transport-requests.store'), [
+                'transport_route_id' => $route->id,
+                'cargo_weight_kg' => 455,
+                'product_category' => 'very_delicate',
+                'product_type' => 'Fresa',
+                'delivery_destination' => 'Arauca',
+                'estimated_cost' => 1,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('transport_requests', [
+            'transport_route_id' => $route->id,
+            'producer_id' => $producer->producerProfile->id,
+            'cargo_weight_kg' => 455,
+            'estimated_cost' => 349000,
         ]);
     }
 
@@ -643,6 +701,7 @@ class TransportRouteManagementTest extends TestCase
             ->post(route('producer.transport-requests.store'), [
                 'transport_route_id' => $route->id,
                 'cargo_weight_kg' => 550,
+                'product_category' => 'resistant',
                 'product_type' => 'Platano',
                 'delivery_destination' => 'Funza',
             ])
@@ -752,7 +811,7 @@ class TransportRouteManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($visibleRoute->origin);
-        $response->assertSee('279000');
+        $response->assertSee('308000');
         $response->assertDontSee($hiddenByCapacity->origin);
     }
 
@@ -774,6 +833,36 @@ class TransportRouteManagementTest extends TestCase
         $response->assertOk();
         $response->assertSee('Sogamoso');
         $response->assertSee('Bogota Norte');
+    }
+
+    public function test_producer_can_view_approved_transporter_profile(): void
+    {
+        $route = $this->createPublishedRoute([
+            'origin' => 'Sogamoso',
+            'destination' => 'Bogota Norte',
+        ], 'profile-visible-transporter@example.com');
+        $producer = $this->createProducerUser('profile-viewer@example.com');
+
+        $response = $this->actingAs($producer)
+            ->get(route('producer.transporters.show', $route->transporter));
+
+        $response->assertOk();
+        $response->assertSee($route->transporter->user->name);
+        $response->assertSee('Sogamoso');
+        $response->assertSee('Bogota Norte');
+    }
+
+    public function test_producer_cannot_view_unapproved_transporter_profile(): void
+    {
+        $transporterUser = $this->createTransporterUser(
+            Transporter::STATUS_PENDING,
+            'profile-hidden-transporter@example.com',
+        );
+        $producer = $this->createProducerUser('profile-hidden-viewer@example.com');
+
+        $this->actingAs($producer)
+            ->get(route('producer.transporters.show', $transporterUser->transporterProfile))
+            ->assertNotFound();
     }
 
     public function test_producer_cannot_view_unavailable_route_detail(): void
@@ -878,6 +967,78 @@ class TransportRouteManagementTest extends TestCase
         $otherProducerResponse->assertOk();
         $otherProducerResponse->assertDontSee('3001112233');
         $otherProducerResponse->assertDontSee('3002223344');
+    }
+
+    public function test_transporter_requests_page_only_lists_pending_requests_for_active_routes(): void
+    {
+        $route = $this->createPublishedRoute([
+            'origin' => 'Ruta Activa',
+            'destination' => 'Destino Activo',
+            'departure_at' => now()->addDays(2),
+            'available_capacity_kg' => 900,
+        ], 'active-request-route@example.com');
+
+        $cancelledRoute = TransportRoute::query()->create([
+            'transporter_id' => $route->transporter_id,
+            'vehicle_id' => $route->vehicle_id,
+            'origin' => 'Ruta Cancelada',
+            'destination' => 'Destino Cancelado',
+            'departure_at' => now()->addDays(2),
+            'available_capacity_kg' => 900,
+            'permitted_cargo_type' => 'Papa',
+            'status' => TransportRoute::STATUS_CANCELLED,
+        ]);
+
+        $pastRoute = TransportRoute::query()->create([
+            'transporter_id' => $route->transporter_id,
+            'vehicle_id' => $route->vehicle_id,
+            'origin' => 'Ruta Vencida',
+            'destination' => 'Destino Vencido',
+            'departure_at' => now()->subDay(),
+            'available_capacity_kg' => 900,
+            'permitted_cargo_type' => 'Papa',
+            'status' => TransportRoute::STATUS_PUBLISHED,
+        ]);
+
+        $producer = $this->createProducerUser('active-request-producer@example.com');
+
+        TransportRequest::query()->create([
+            'transport_route_id' => $route->id,
+            'producer_id' => $producer->producerProfile->id,
+            'cargo_weight_kg' => 300,
+            'product_type' => 'Cafe visible',
+            'delivery_destination' => 'Tunja',
+            'requested_at' => now(),
+            'status' => TransportRequest::STATUS_PENDING,
+        ]);
+
+        TransportRequest::query()->create([
+            'transport_route_id' => $cancelledRoute->id,
+            'producer_id' => $producer->producerProfile->id,
+            'cargo_weight_kg' => 300,
+            'product_type' => 'Papa cancelada',
+            'delivery_destination' => 'Tunja',
+            'requested_at' => now(),
+            'status' => TransportRequest::STATUS_PENDING,
+        ]);
+
+        TransportRequest::query()->create([
+            'transport_route_id' => $pastRoute->id,
+            'producer_id' => $producer->producerProfile->id,
+            'cargo_weight_kg' => 300,
+            'product_type' => 'Yuca vencida',
+            'delivery_destination' => 'Tunja',
+            'requested_at' => now(),
+            'status' => TransportRequest::STATUS_PENDING,
+        ]);
+
+        $response = $this->actingAs($route->transporter->user)
+            ->get(route('transporter.requests.index'));
+
+        $response->assertOk();
+        $response->assertSee('Cafe visible');
+        $response->assertDontSee('Papa cancelada');
+        $response->assertDontSee('Yuca vencida');
     }
 
     public function test_only_route_owner_can_accept_a_request(): void
@@ -1011,6 +1172,7 @@ class TransportRouteManagementTest extends TestCase
             'origin' => 'Duitama',
             'destination' => 'Bogota',
             'departure_at' => now()->addDays(4),
+            'min_cargo_weight_kg' => 100,
             'available_capacity_kg' => 900,
             'permitted_cargo_type' => 'Papa',
             'status' => TransportRoute::STATUS_PUBLISHED,
