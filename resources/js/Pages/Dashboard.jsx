@@ -413,7 +413,7 @@ function TransporterOperations({
                                 </div>
 
                                 <p className="mt-4 rounded-xl bg-[#edf7e8] px-4 py-3 text-sm font-semibold text-[#3f6f4b]">
-                                    Carga permitida: {data.spotlight.cargoLabel}
+                                    La carga se define cuando el productor envia la solicitud.
                                 </p>
                             </aside>
                         </div>

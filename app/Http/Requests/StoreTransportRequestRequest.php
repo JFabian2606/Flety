@@ -29,6 +29,7 @@ class StoreTransportRequestRequest extends FormRequest
             ],
             'cargo_weight_kg' => ['required', 'numeric', 'gt:0', 'max:99999999.99'],
             'product_type' => ['required', 'string', 'max:100'],
+            'product_category' => ['required', 'string', Rule::in(['resistant', 'sensitive', 'delicate', 'very_delicate'])],
             'delivery_destination' => ['required', 'string', 'max:255'],
             'estimated_cost' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
         ];
@@ -56,6 +57,10 @@ class StoreTransportRequestRequest extends FormRequest
                 $validator->errors()->add('transport_route_id', 'Solo se pueden solicitar rutas publicadas.');
             }
 
+            if ((float) $route->available_capacity_kg < (float) $route->min_cargo_weight_kg) {
+                $validator->errors()->add('transport_route_id', 'Esta ruta ya no tiene capacidad suficiente para nuevas solicitudes.');
+            }
+
             if (! $route->transporter?->isValidated()) {
                 $validator->errors()->add('transport_route_id', 'Solo se pueden solicitar rutas de transportistas aprobados.');
             }
@@ -66,6 +71,10 @@ class StoreTransportRequestRequest extends FormRequest
 
             if ((float) $this->input('cargo_weight_kg') > (float) $route->available_capacity_kg) {
                 $validator->errors()->add('cargo_weight_kg', 'La carga excede la capacidad disponible de la ruta.');
+            }
+
+            if ((float) $this->input('cargo_weight_kg') < (float) $route->min_cargo_weight_kg) {
+                $validator->errors()->add('cargo_weight_kg', 'La carga no alcanza el peso minimo definido por el transportista para esta ruta.');
             }
 
             if ($route->transporter?->user_id === $this->user()?->id) {
@@ -88,6 +97,7 @@ class StoreTransportRequestRequest extends FormRequest
     {
         $this->merge([
             'product_type' => trim((string) $this->input('product_type')),
+            'product_category' => trim((string) $this->input('product_category')),
             'delivery_destination' => trim((string) $this->input('delivery_destination')),
         ]);
     }

@@ -42,8 +42,9 @@ class StoreTransportRouteRequest extends FormRequest
             'destination_lng' => ['required', 'numeric', 'between:-82.2,-66.7'],
 
             'departure_at' => ['required', 'date', 'after:now'],
+            'min_cargo_weight_kg' => ['required', 'numeric', 'gt:0', 'max:99999999.99'],
             'available_capacity_kg' => ['required', 'numeric', 'gt:0', 'max:99999999.99'],
-            'permitted_cargo_type' => ['required', 'string', 'max:100'],
+            'permitted_cargo_type' => ['nullable', 'string', 'max:100'],
         ];
     }
 
@@ -67,6 +68,10 @@ class StoreTransportRouteRequest extends FormRequest
             if ($vehicle && (float) $this->input('available_capacity_kg') > (float) $vehicle->capacity_kg) {
                 $validator->errors()->add('available_capacity_kg', 'La capacidad disponible no puede superar la capacidad del vehículo.');
             }
+            if ((float) $this->input('min_cargo_weight_kg') > (float) $this->input('available_capacity_kg')) {
+                $validator->errors()->add('min_cargo_weight_kg', 'El peso minimo no puede ser mayor al peso maximo disponible.');
+            }
+
             if ($this->filled('origin_lat') && $this->filled('origin_lng') && $this->filled('destination_lat') && $this->filled('destination_lng')) {
                 return;
             }
@@ -80,7 +85,8 @@ class StoreTransportRouteRequest extends FormRequest
         $this->merge([
             'origin' => trim((string) $this->input('origin')),
             'destination' => trim((string) $this->input('destination')),
-            'permitted_cargo_type' => trim((string) $this->input('permitted_cargo_type')),
+            'min_cargo_weight_kg' => $this->input('min_cargo_weight_kg', 1),
+            'permitted_cargo_type' => trim((string) $this->input('permitted_cargo_type', 'Carga definida por el productor')),
         ]);
     }
 }

@@ -82,6 +82,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/productor/rutas', [TransportRouteController::class, 'producerIndex'])
         ->middleware(['verified', 'role:productor'])
         ->name('producer.routes.index');
+    Route::get('/productor/transportistas/{transporter}', [TransportRouteController::class, 'producerTransporterShow'])
+        ->middleware(['verified', 'role:productor'])
+        ->name('producer.transporters.show');
     Route::get('/productor/rutas/{transportRoute}', [TransportRouteController::class, 'producerShow'])
         ->middleware(['verified', 'role:productor'])
         ->name('producer.routes.show');

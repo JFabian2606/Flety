@@ -3,6 +3,13 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 
 const colombiaTimeZone = 'America/Bogota';
 
+const productCategoryLabels = {
+    resistant: 'Resistente',
+    sensitive: 'Sensible',
+    delicate: 'Delicado',
+    very_delicate: 'Muy delicado',
+};
+
 const statusLabels = {
     accepted: 'Aceptada',
     cancelled: 'Cancelada',
@@ -38,7 +45,7 @@ function formatCurrency(value) {
 }
 
 function cardClassName(extra = '') {
-    return `animate-panel-rise rounded-2xl border border-[#dfe8dc] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-6 ${extra}`.trim();
+    return `animate-panel-rise min-w-0 rounded-2xl border border-[#dfe8dc] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-6 ${extra}`.trim();
 }
 
 function StatusBadge({ status }) {
@@ -63,13 +70,15 @@ function StatusBadge({ status }) {
 
 function SectionTitle({ eyebrow, title, description }) {
     return (
-        <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#427c46]">
+        <div className="min-w-0 space-y-2">
+            <p className="break-words text-xs font-semibold uppercase tracking-[0.18em] text-[#427c46] sm:tracking-[0.22em]">
                 {eyebrow}
             </p>
-            <h3 className="text-2xl font-semibold text-slate-900">{title}</h3>
+            <h3 className="break-words text-xl font-semibold text-slate-900 sm:text-2xl">
+                {title}
+            </h3>
             {description ? (
-                <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                <p className="max-w-3xl break-words text-sm leading-6 text-slate-600">
                     {description}
                 </p>
             ) : null}
@@ -134,46 +143,106 @@ function ContactActions({ service }) {
 }
 
 function TransportRequestCard({ transportRequest, decisionForm }) {
+    const canAccept = transportRequest.can_accept !== false;
+
     return (
-        <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <h4 className="text-lg font-semibold text-slate-900">
-                            {transportRequest.route?.origin} {'->'}{' '}
-                            {transportRequest.route?.destination}
-                        </h4>
+        <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_16px_36px_-34px_rgba(15,23,42,0.65)] sm:p-5">
+            <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        {transportRequest.is_new ? (
+                            <span className="rounded-full bg-lime-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-lime-700">
+                                Nueva
+                            </span>
+                        ) : null}
                         <StatusBadge status={transportRequest.status} />
+                        <span
+                            className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] ${
+                                canAccept
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-amber-100 text-amber-800'
+                            }`}
+                        >
+                            {canAccept ? 'Compatible' : 'Revisar capacidad'}
+                        </span>
                     </div>
-                    <p className="mt-3 text-sm text-slate-600">
-                        Productor: {transportRequest.producer?.name}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                        Producto: {transportRequest.product_type} {' - '} Peso:{' '}
-                        {transportRequest.cargo_weight_kg} kg
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                        Entrega: {transportRequest.delivery_destination}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                        Solicitado el {formatDate(transportRequest.requested_at)}
-                    </p>
-                    {transportRequest.route?.vehicle ? (
-                        <p className="mt-1 text-sm text-slate-600">
-                            Vehiculo: {transportRequest.route.vehicle.vehicle_type}{' '}
-                            {' - '} {transportRequest.route.vehicle.plate}
+
+                    <h4 className="mt-3 break-words text-lg font-bold leading-snug text-slate-950">
+                        {transportRequest.route?.origin} {'->'}{' '}
+                        {transportRequest.route?.destination}
+                    </h4>
+
+                    <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                Productor
+                            </p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                                {transportRequest.producer?.name ?? 'Sin nombre'}
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                Salida de ruta
+                            </p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                                {formatDate(transportRequest.route?.departure_at)}
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                                Carga solicitada
+                            </p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                                {transportRequest.product_type} -{' '}
+                                {transportRequest.cargo_weight_kg} kg
+                            </p>
+                            <p className="mt-1 text-xs font-semibold text-emerald-700">
+                                {productCategoryLabels[
+                                    transportRequest.product_category
+                                ] ?? 'Categoria sin definir'}
+                            </p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                Capacidad disponible
+                            </p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                                {transportRequest.route?.available_capacity_kg ?? 0} kg
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 space-y-1 text-sm text-slate-600">
+                        <p className="break-words">
+                            Entrega: {transportRequest.delivery_destination}
                         </p>
-                    ) : null}
-                    {transportRequest.estimated_cost ? (
-                        <p className="mt-1 text-sm text-slate-600">
-                            Valor estimado:{' '}
-                            {formatCurrency(transportRequest.estimated_cost)}
+                        <p>
+                            Solicitado el {formatDate(transportRequest.requested_at)}
                         </p>
-                    ) : null}
+                        {transportRequest.route?.vehicle ? (
+                            <p className="break-words">
+                                Vehiculo: {transportRequest.route.vehicle.vehicle_type}{' '}
+                                - {transportRequest.route.vehicle.plate}
+                            </p>
+                        ) : null}
+                        {transportRequest.estimated_cost ? (
+                            <p className="font-semibold text-slate-900">
+                                Valor estimado:{' '}
+                                {formatCurrency(transportRequest.estimated_cost)}
+                            </p>
+                        ) : null}
+                    </div>
                 </div>
 
                 {transportRequest.status === 'pending' ? (
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex min-w-[14rem] flex-col gap-2">
+                        {!canAccept ? (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-800">
+                                La carga supera la capacidad restante. Puedes
+                                rechazarla o actualizar tu ruta si corresponde.
+                            </div>
+                        ) : null}
                         <button
                             type="button"
                             onClick={() =>
@@ -185,10 +254,10 @@ function TransportRequestCard({ transportRequest, decisionForm }) {
                                     { preserveScroll: true },
                                 )
                             }
-                            disabled={decisionForm.processing}
-                            className="inline-flex rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+                            disabled={decisionForm.processing || !canAccept}
+                            className="inline-flex w-full justify-center rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            Aceptar y habilitar contacto
+                            Aceptar solicitud
                         </button>
                         <button
                             type="button"
@@ -202,7 +271,7 @@ function TransportRequestCard({ transportRequest, decisionForm }) {
                                 )
                             }
                             disabled={decisionForm.processing}
-                            className="inline-flex rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
+                            className="inline-flex w-full justify-center rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
                         >
                             Rechazar
                         </button>
@@ -230,6 +299,12 @@ function ServiceCard({ service }) {
                     <p className="mt-1 text-sm text-slate-600">
                         Producto: {service.request?.product_type} {' - '} Peso:{' '}
                         {service.request?.cargo_weight_kg} kg
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                        Categoria:{' '}
+                        {productCategoryLabels[
+                            service.request?.product_category
+                        ] ?? 'Sin definir'}
                     </p>
                     <p className="mt-1 text-sm text-slate-600">
                         Entrega: {service.request?.delivery_destination}
@@ -269,32 +344,88 @@ function ServiceCard({ service }) {
 export default function TransporterRequests({
     incomingRequests = [],
     confirmedServices = [],
+    requestSummary = {},
 }) {
     const decisionForm = useForm({});
     const { flash } = usePage().props;
+    const summaryCards = [
+        {
+            label: 'Solicitudes pendientes',
+            value: requestSummary.pending_count ?? incomingRequests.length,
+        },
+        {
+            label: 'Nuevas en 24 h',
+            value: requestSummary.new_count ?? 0,
+        },
+        {
+            label: 'Compatibles',
+            value: requestSummary.compatible_count ?? 0,
+        },
+        {
+            label: 'Rutas activas',
+            value: requestSummary.active_route_count ?? 0,
+        },
+    ];
 
     return (
-        <AuthenticatedLayout
-            header={
-                <SectionTitle
-                    eyebrow="Operacion"
-                    title="Solicitudes y contactos"
-                    description="Gestiona solicitudes de productores y consulta los servicios que ya tienen contacto habilitado."
-                />
-            }
-        >
+        <AuthenticatedLayout>
             <Head title="Solicitudes y contactos" />
 
-            <div className="bg-[linear-gradient(180deg,#eef7ec_0%,#f7faf4_100%)] py-5 sm:py-7">
+            <div className="min-h-screen bg-[linear-gradient(180deg,#eef7ec_0%,#f7faf4_100%)] py-5 sm:py-7">
                 <div className="mx-auto flex max-w-[1540px] flex-col gap-5 px-3 sm:px-5 lg:px-8">
                     <FlashMessages success={flash.success} error={flash.error} />
 
-                    <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+                    <section className="animate-panel-rise overflow-hidden rounded-2xl border border-[#0d4f2a]/20 bg-[linear-gradient(135deg,#06451f_0%,#083f24_58%,#0f6b38_100%)] p-5 text-white shadow-[0_28px_70px_-52px_rgba(4,59,31,0.85)] sm:p-6">
+                        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#bfe6b5]">
+                                    HU11 - Solicitudes de carga
+                                </p>
+                                <h1 className="mt-4 max-w-3xl text-3xl font-bold leading-tight tracking-[-0.03em] sm:text-4xl">
+                                    Recibe y decide solicitudes vinculadas a tus rutas activas
+                                </h1>
+                                <p className="mt-4 max-w-3xl text-sm leading-6 text-[#d9ead3]">
+                                    Revisa productores, peso, producto y destino antes
+                                    de aceptar. Al confirmar, el contacto queda
+                                    habilitado para coordinar el servicio.
+                                </p>
+                            </div>
+                            <div className="rounded-2xl border border-white/16 bg-white/10 px-5 py-4 text-sm text-white shadow-[0_24px_48px_-42px_rgba(0,0,0,0.6)]">
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#bfe6b5]">
+                                    Alerta actual
+                                </p>
+                                <p className="mt-2 text-3xl font-bold">
+                                    {requestSummary.new_count ?? 0}
+                                </p>
+                                <p className="mt-1 text-white/75">
+                                    solicitudes nuevas
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            {summaryCards.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="rounded-2xl border border-white/16 bg-white/8 px-4 py-3"
+                                >
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#bfe6b5]">
+                                        {item.label}
+                                    </p>
+                                    <p className="mt-2 text-2xl font-bold">
+                                        {item.value}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    <section className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
                         <article className={cardClassName()}>
                             <SectionTitle
                                 eyebrow="Solicitudes"
                                 title="Solicitudes recibidas"
-                                description="Acepta o rechaza solicitudes de productores. Al aceptar, el servicio se confirma y el contacto queda habilitado para ambas partes."
+                                description="Solo se muestran solicitudes pendientes asociadas a tus rutas publicadas, futuras y disponibles."
                             />
 
                             <div className="mt-6 grid gap-4">
@@ -307,7 +438,7 @@ export default function TransporterRequests({
                                         />
                                     ))
                                 ) : (
-                                    <EmptyState message="Todavia no has recibido solicitudes sobre tus rutas." />
+                                    <EmptyState message="No hay solicitudes pendientes para tus rutas activas." />
                                 )}
                             </div>
                         </article>
