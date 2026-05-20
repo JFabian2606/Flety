@@ -19,6 +19,8 @@ class TransportRequestController extends Controller
 {
     public function transporterIndex(Request $request): Response
     {
+        TransportRoute::cancelExpiredUnstartedRoutes();
+
         $user = $request->user()->loadMissing('transporterProfile');
         $transporter = $user->transporterProfile;
 

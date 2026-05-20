@@ -20,6 +20,8 @@ class DashboardController extends Controller
 {
     public function transporter(Request $request): Response
     {
+        TransportRoute::cancelExpiredUnstartedRoutes();
+
         $user = $request->user()->loadMissing('transporterProfile');
         $transporter = $user->transporterProfile;
 
@@ -185,6 +187,8 @@ class DashboardController extends Controller
 
     public function producer(Request $request): Response
     {
+        TransportRoute::cancelExpiredUnstartedRoutes();
+
         $user = $request->user()->loadMissing('producerProfile');
         $producer = $user->producerProfile;
 
@@ -339,6 +343,8 @@ class DashboardController extends Controller
 
     public function admin(Request $request): Response
     {
+        TransportRoute::cancelExpiredUnstartedRoutes();
+
         $pendingTransportersCount = Transporter::query()
             ->where('validation_status', Transporter::STATUS_PENDING)
             ->count();

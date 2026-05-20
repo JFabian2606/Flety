@@ -4,26 +4,91 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
 const colombiaTimeZone = 'America/Bogota';
 
-const productCategoryOptions = [
+const productOptions = [
     {
-        value: 'resistant',
-        label: 'Producto resistente',
-        description: 'Papa, platano verde, yuca, granos o carga poco delicada.',
+        value: 'Papa',
+        category: 'resistant',
+        description: 'Tuberculo apto para transporte convencional.',
     },
     {
-        value: 'sensitive',
-        label: 'Producto sensible',
-        description: 'Hortalizas, frutas firmes o productos que requieren mas cuidado.',
+        value: 'Platano',
+        category: 'resistant',
+        description: 'Carga apta para transporte convencional.',
     },
     {
-        value: 'delicate',
-        label: 'Producto delicado',
-        description: 'Tomate, aguacate, mango, lechuga o productos faciles de marcar.',
+        value: 'Yuca',
+        category: 'resistant',
+        description: 'Tuberculo apto para transporte convencional.',
     },
     {
-        value: 'very_delicate',
-        label: 'Producto muy delicado',
-        description: 'Fresa, mora, uva, flores o productos de alta fragilidad.',
+        value: 'Cafe',
+        category: 'resistant',
+        description: 'Grano o carga empacada para transporte convencional.',
+    },
+    {
+        value: 'Maiz',
+        category: 'resistant',
+        description: 'Grano o carga empacada para transporte convencional.',
+    },
+    {
+        value: 'Frijol',
+        category: 'resistant',
+        description: 'Grano o carga empacada para transporte convencional.',
+    },
+    {
+        value: 'Hortalizas',
+        category: 'sensitive',
+        description: 'Requiere cuidado adicional durante el cargue y trayecto.',
+    },
+    {
+        value: 'Cebolla',
+        category: 'sensitive',
+        description: 'Requiere cuidado adicional durante el cargue y trayecto.',
+    },
+    {
+        value: 'Banano',
+        category: 'sensitive',
+        description: 'Fruta que requiere evitar golpes y presion.',
+    },
+    {
+        value: 'Tomate',
+        category: 'delicate',
+        description: 'Requiere evitar golpes, presion y apilado excesivo.',
+    },
+    {
+        value: 'Aguacate',
+        category: 'delicate',
+        description: 'Requiere evitar golpes y exposicion prolongada al calor.',
+    },
+    {
+        value: 'Mango',
+        category: 'delicate',
+        description: 'Requiere evitar golpes y presion durante el trayecto.',
+    },
+    {
+        value: 'Lechuga',
+        category: 'delicate',
+        description: 'Requiere mayor cuidado por volumen y frescura.',
+    },
+    {
+        value: 'Fresa',
+        category: 'very_delicate',
+        description: 'Requiere manejo cuidadoso por su alta fragilidad.',
+    },
+    {
+        value: 'Mora',
+        category: 'very_delicate',
+        description: 'Requiere manejo cuidadoso por su alta fragilidad.',
+    },
+    {
+        value: 'Uva',
+        category: 'very_delicate',
+        description: 'Requiere manejo cuidadoso por su alta fragilidad.',
+    },
+    {
+        value: 'Flores',
+        category: 'very_delicate',
+        description: 'Requiere manejo cuidadoso por volumen y fragilidad.',
     },
 ];
 
@@ -184,7 +249,7 @@ export default function Show({ transportRoute }) {
         transport_route_id: transportRoute.id,
         cargo_weight_kg: transportRoute.cost_estimate_weight_kg ?? '',
         product_category: transportRoute.cost_estimate_product_category ?? '',
-        product_type: '',
+        product_type: transportRoute.cost_estimate_product_type ?? '',
         delivery_destination: '',
         estimated_cost: transportRoute.estimated_cost ?? '',
     });
@@ -442,63 +507,83 @@ export default function Show({ transportRoute }) {
 
                                         <div>
                                             <label
-                                                htmlFor="product_category"
+                                                htmlFor="product_type"
                                                 className="text-sm font-medium text-slate-700"
                                             >
-                                                Categoria de la carga
+                                                Producto a enviar
                                             </label>
                                             <select
-                                                id="product_category"
+                                                id="product_type"
                                                 required
                                                 value={
-                                                    requestForm.data
-                                                        .product_category
+                                                    requestForm.data.product_type
                                                 }
                                                 onChange={(event) => {
-                                                    const productCategory =
-                                                        event.target.value;
+                                                    const selectedProduct =
+                                                        productOptions.find(
+                                                            (option) =>
+                                                                option.value ===
+                                                                event.target.value,
+                                                        );
 
                                                     requestForm.setData({
                                                         ...requestForm.data,
+                                                        product_type:
+                                                            selectedProduct
+                                                                ?.value ?? '',
                                                         product_category:
-                                                            productCategory,
+                                                            selectedProduct
+                                                                ?.category ?? '',
                                                         estimated_cost:
                                                             estimateTransportCost(
                                                                 transportRoute.distance_km,
                                                                 requestForm.data
                                                                     .cargo_weight_kg,
-                                                                productCategory,
+                                                                selectedProduct
+                                                                    ?.category,
                                                             ),
                                                     });
                                                 }}
                                                 className="mt-2 block w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                             >
                                                 <option value="">
-                                                    Selecciona una categoria
+                                                    Selecciona el producto
                                                 </option>
-                                                {productCategoryOptions.map(
-                                                    (option) => (
-                                                        <option
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {option.label}
-                                                        </option>
-                                                    ),
-                                                )}
+                                                {productOptions.map((option) => (
+                                                    <option
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.value}
+                                                    </option>
+                                                ))}
                                             </select>
-                                            {requestForm.data.product_category ? (
+                                            <input
+                                                type="hidden"
+                                                name="product_category"
+                                                value={
+                                                    requestForm.data
+                                                        .product_category
+                                                }
+                                            />
+                                            {requestForm.data.product_type ? (
                                                 <p className="mt-2 text-xs text-slate-500">
                                                     {
-                                                        productCategoryOptions.find(
+                                                        productOptions.find(
                                                             (option) =>
                                                                 option.value ===
                                                                 requestForm.data
-                                                                    .product_category,
+                                                                    .product_type,
                                                         )?.description
                                                     }
                                                 </p>
                                             ) : null}
+                                            <FieldError
+                                                message={
+                                                    requestForm.errors
+                                                        .product_type
+                                                }
+                                            />
                                             <FieldError
                                                 message={
                                                     requestForm.errors
@@ -508,39 +593,7 @@ export default function Show({ transportRoute }) {
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                                        <div>
-                                            <label
-                                                htmlFor="product_type"
-                                                className="text-sm font-medium text-slate-700"
-                                            >
-                                                Producto a enviar
-                                            </label>
-                                            <input
-                                                id="product_type"
-                                                required
-                                                maxLength="100"
-                                                value={
-                                                    requestForm.data.product_type
-                                                }
-                                                onChange={(event) =>
-                                                    requestForm.setData(
-                                                        'product_type',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                className="mt-2 block w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                                                placeholder="Ej. fresa, papa, cafe"
-                                            />
-                                            <FieldError
-                                                message={
-                                                    requestForm.errors
-                                                        .product_type
-                                                }
-                                            />
-                                        </div>
-
-                                        <div>
+                                    <div className="mt-4">
                                         <label
                                             htmlFor="delivery_destination"
                                             className="text-sm font-medium text-slate-700"
@@ -570,7 +623,6 @@ export default function Show({ transportRoute }) {
                                                     .delivery_destination
                                             }
                                         />
-                                        </div>
                                     </div>
 
                                     <FieldError
