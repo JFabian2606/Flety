@@ -23,6 +23,8 @@ class TransportRouteController extends Controller
 {
     public function transporterIndex(Request $request): Response
     {
+        TransportRoute::cancelExpiredUnstartedRoutes();
+
         $user = $request->user()->loadMissing([
             'role:id,name,slug',
             'transporterProfile.vehicles',
@@ -90,6 +92,8 @@ class TransportRouteController extends Controller
 
     public function producerIndex(Request $request): Response
     {
+        TransportRoute::cancelExpiredUnstartedRoutes();
+
         $user = $request->user()->loadMissing([
             'role:id,name,slug',
             'producerProfile',
@@ -102,11 +106,12 @@ class TransportRouteController extends Controller
             'cargo_weight_kg' => $request->filled('cargo_weight_kg') && (float) $request->input('cargo_weight_kg') > 0
                 ? (float) $request->input('cargo_weight_kg')
                 : null,
-            'product_category' => in_array($request->string('product_category')->toString(), ['resistant', 'sensitive', 'delicate', 'very_delicate'], true)
-                ? $request->string('product_category')->toString()
-                : null,
+            'product_type' => trim($request->string('product_type')->toString()),
         ];
         $costEstimator = app(TransportCostEstimator::class);
+        $routeFilters['product_category'] = $routeFilters['product_type'] !== ''
+            ? $costEstimator->categoryForProduct($routeFilters['product_type'])
+            : null;
 
         $availableRoutes = TransportRoute::query()
             ->with([
@@ -221,6 +226,9 @@ class TransportRouteController extends Controller
 
     public function producerShow(Request $request, TransportRoute $transportRoute): Response
     {
+        TransportRoute::cancelExpiredUnstartedRoutes();
+        $transportRoute->refresh();
+
         $transportRoute->load([
             'vehicle:id,plate,vehicle_type,capacity_kg',
             'transporter.user:id,name',
@@ -237,13 +245,14 @@ class TransportRouteController extends Controller
         $cargoWeightKg = $request->filled('cargo_weight_kg') && (float) $request->input('cargo_weight_kg') > 0
             ? min((float) $request->input('cargo_weight_kg'), (float) $transportRoute->available_capacity_kg)
             : null;
-        $productCategory = in_array($request->string('product_category')->toString(), ['resistant', 'sensitive', 'delicate', 'very_delicate'], true)
-            ? $request->string('product_category')->toString()
+        $productType = trim($request->string('product_type')->toString());
+        $productCategory = $productType !== ''
+            ? app(TransportCostEstimator::class)->categoryForProduct($productType)
             : null;
         $estimatedCost = app(TransportCostEstimator::class)->estimate(
             $transportRoute->distance_km,
             $cargoWeightKg,
-            null,
+            $productType,
             $productCategory,
         );
 
@@ -263,6 +272,7 @@ class TransportRouteController extends Controller
                 'estimated_duration_minutes' => $transportRoute->estimated_duration_minutes,
                 'estimated_cost' => $estimatedCost,
                 'cost_estimate_weight_kg' => $cargoWeightKg,
+                'cost_estimate_product_type' => $productType,
                 'cost_estimate_product_category' => $productCategory,
                 'route_geometry' => $transportRoute->route_geometry,
                 'permitted_cargo_type' => $transportRoute->permitted_cargo_type,

@@ -40,6 +40,16 @@ class TransportCostEstimator
         return (float) (ceil($estimatedCost / 1000) * 1000);
     }
 
+    public function categoryForProduct(?string $productType): string
+    {
+        return match ($this->legacyProductFactor($productType)) {
+            1.15 => 'very_delicate',
+            1.10 => 'delicate',
+            1.05 => 'sensitive',
+            default => 'resistant',
+        };
+    }
+
     private function weightPrice(float $cargoWeightKg): float
     {
         if ($cargoWeightKg <= 100) {

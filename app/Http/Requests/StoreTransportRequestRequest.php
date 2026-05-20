@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Producer;
 use App\Models\TransportRequest;
 use App\Models\TransportRoute;
+use App\Services\TransportCostEstimator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -97,7 +98,8 @@ class StoreTransportRequestRequest extends FormRequest
     {
         $this->merge([
             'product_type' => trim((string) $this->input('product_type')),
-            'product_category' => trim((string) $this->input('product_category')),
+            'product_category' => trim((string) $this->input('product_category'))
+                ?: app(TransportCostEstimator::class)->categoryForProduct($this->input('product_type')),
             'delivery_destination' => trim((string) $this->input('delivery_destination')),
         ]);
     }
