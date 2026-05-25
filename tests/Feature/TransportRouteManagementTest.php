@@ -434,6 +434,25 @@ class TransportRouteManagementTest extends TestCase
         );
     }
 
+    public function test_unstarted_route_is_cancelled_after_estimated_travel_time_passes(): void
+    {
+        $route = $this->createPublishedRoute([
+            'departure_at' => now()->subHours(4),
+            'estimated_duration_minutes' => 180,
+            'status' => TransportRoute::STATUS_PUBLISHED,
+        ], 'expired-unstarted-route@example.com');
+        $producer = $this->createProducerUser('expired-unstarted-viewer@example.com');
+
+        $this->actingAs($producer)
+            ->get(route('producer.routes.index'))
+            ->assertOk();
+
+        $this->assertDatabaseHas('transport_routes', [
+            'id' => $route->id,
+            'status' => TransportRoute::STATUS_CANCELLED,
+        ]);
+    }
+
     public function test_route_owner_can_cancel_a_due_route_instead_of_starting(): void
     {
         $route = $this->createPublishedRoute([
@@ -579,7 +598,6 @@ class TransportRouteManagementTest extends TestCase
             ->assertSessionHasErrors([
                 'cargo_weight_kg',
                 'product_type',
-                'product_category',
                 'delivery_destination',
             ]);
 

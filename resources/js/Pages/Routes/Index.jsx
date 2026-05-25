@@ -6,11 +6,24 @@ import { useEffect, useRef, useState } from 'react';
 
 const colombiaTimeZone = 'America/Bogota';
 
-const productCategoryOptions = [
-    { value: 'resistant', label: 'Resistente' },
-    { value: 'sensitive', label: 'Sensible' },
-    { value: 'delicate', label: 'Delicado' },
-    { value: 'very_delicate', label: 'Muy delicado' },
+const productOptions = [
+    'Papa',
+    'Platano',
+    'Yuca',
+    'Cafe',
+    'Maiz',
+    'Frijol',
+    'Hortalizas',
+    'Cebolla',
+    'Banano',
+    'Tomate',
+    'Aguacate',
+    'Mango',
+    'Lechuga',
+    'Fresa',
+    'Mora',
+    'Uva',
+    'Flores',
 ];
 
 const statusLabels = {
@@ -2930,13 +2943,13 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
         origin: routeFilters.origin ?? '',
         destination: routeFilters.destination ?? '',
         cargo_weight_kg: routeFilters.cargo_weight_kg ?? '',
-        product_category: routeFilters.product_category ?? '',
+        product_type: routeFilters.product_type ?? '',
     });
     const hasActiveSearch =
         Boolean(routeFilters.origin) ||
         Boolean(routeFilters.destination) ||
         Boolean(routeFilters.cargo_weight_kg) ||
-        Boolean(routeFilters.product_category);
+        Boolean(routeFilters.product_type);
 
     const submitSearch = (event) => {
         event.preventDefault();
@@ -3252,7 +3265,7 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
         route('producer.routes.show', {
             transportRoute: transportRoute.id,
             cargo_weight_kg: routeFilters.cargo_weight_kg || undefined,
-            product_category: routeFilters.product_category || undefined,
+            product_type: routeFilters.product_type || undefined,
         });
 
     const submitSearch = (event) => {
@@ -3267,7 +3280,7 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
                     Number(searchFilters.cargo_weight_kg) > 0
                         ? searchFilters.cargo_weight_kg
                         : undefined,
-                product_category: searchFilters.product_category || undefined,
+                product_type: searchFilters.product_type || undefined,
             },
             {
                 preserveScroll: true,
@@ -3282,7 +3295,7 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
             origin: '',
             destination: '',
             cargo_weight_kg: '',
-            product_category: '',
+            product_type: '',
         });
 
         router.get(
@@ -3380,26 +3393,26 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
 
                         <div className="min-w-0">
                             <label
-                                htmlFor="search_product_category"
+                                htmlFor="search_product_type"
                                 className="text-sm font-medium text-slate-700"
                             >
-                                Tipo de carga
+                                Producto
                             </label>
                             <select
-                                id="search_product_category"
-                                value={searchFilters.product_category}
+                                id="search_product_type"
+                                value={searchFilters.product_type}
                                 onChange={(event) =>
                                     setSearchFilters((current) => ({
                                         ...current,
-                                        product_category: event.target.value,
+                                        product_type: event.target.value,
                                     }))
                                 }
                                 className="mt-2 block w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-base shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
                             >
-                                <option value="">Selecciona tipo</option>
-                                {productCategoryOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
+                                <option value="">Selecciona producto</option>
+                                {productOptions.map((product) => (
+                                    <option key={product} value={product}>
+                                        {product}
                                     </option>
                                 ))}
                             </select>

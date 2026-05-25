@@ -55,6 +55,11 @@ export default function AuthenticatedLayout({ header, children }) {
                         href: route('producer.routes.index'),
                         active: route().current('producer.routes.index'),
                     },
+                    {
+                        label: 'Rutas activas',
+                        href: route('producer.requests.index'),
+                        active: route().current('producer.requests.index'),
+                    },
                 ];
 
     const [showingModuleMenu, setShowingModuleMenu] = useState(false);

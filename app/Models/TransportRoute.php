@@ -93,4 +93,46 @@ class TransportRoute extends Model
 
         return $this->status;
     }
+
+    public function shouldCancelBecauseDepartureWindowExpired(?Carbon $now = null): bool
+    {
+        if (! in_array($this->status, [self::STATUS_PUBLISHED, self::STATUS_CLOSED], true)) {
+            return false;
+        }
+
+        if (! $this->departure_at || ! $this->estimated_duration_minutes) {
+            return false;
+        }
+
+        $now ??= now();
+
+        return $this->departure_at
+            ->copy()
+            ->addMinutes((int) $this->estimated_duration_minutes)
+            ->lessThanOrEqualTo($now);
+    }
+
+    public static function cancelExpiredUnstartedRoutes(?Carbon $now = null): int
+    {
+        $now ??= now();
+        $cancelledCount = 0;
+
+        self::query()
+            ->whereIn('status', [self::STATUS_PUBLISHED, self::STATUS_CLOSED])
+            ->whereNotNull('departure_at')
+            ->whereNotNull('estimated_duration_minutes')
+            ->where('departure_at', '<=', $now)
+            ->chunkById(100, function ($routes) use ($now, &$cancelledCount) {
+                foreach ($routes as $route) {
+                    if (! $route->shouldCancelBecauseDepartureWindowExpired($now)) {
+                        continue;
+                    }
+
+                    $route->forceFill(['status' => self::STATUS_CANCELLED])->save();
+                    $cancelledCount++;
+                }
+            });
+
+        return $cancelledCount;
+    }
 }
