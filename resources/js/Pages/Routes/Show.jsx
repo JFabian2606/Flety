@@ -1,6 +1,7 @@
 import RouteMap from '@/Components/RouteMap';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 
 const colombiaTimeZone = 'America/Bogota';
 
@@ -239,8 +240,9 @@ function FieldError({ message }) {
     return <p className="mt-2 break-words text-sm text-rose-600">{message}</p>;
 }
 
-export default function Show({ transportRoute }) {
+export default function Show({ transportRoute, already_requested }) {
     const { flash } = usePage().props;
+    const [isSubmitted, setIsSubmitted] = useState(already_requested ?? false);
     const hasMap = hasRouteCoordinates(transportRoute);
     const estimatedCostLabel = transportRoute.estimated_cost
         ? formatCurrency(transportRoute.estimated_cost)
@@ -402,8 +404,8 @@ export default function Show({ transportRoute }) {
                         </section>
 
                         <section className="animate-panel-rise rounded-2xl border border-[#d8e8d4] bg-white p-4 shadow-[0_18px_44px_-36px_rgba(31,74,49,0.35)] sm:p-6">
-                            <form
-                                className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.42fr)]"
+                                <form
+                                    className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.42fr)]"
                                 noValidate
                                 onSubmit={(event) => {
                                     event.preventDefault();
@@ -411,14 +413,16 @@ export default function Show({ transportRoute }) {
                                         route('producer.transport-requests.store'),
                                         {
                                             preserveScroll: true,
-                                            onSuccess: () =>
+                                            onSuccess: () => {
                                                 requestForm.reset(
                                                     'cargo_weight_kg',
                                                     'product_category',
                                                     'product_type',
                                                     'delivery_destination',
                                                     'estimated_cost',
-                                                ),
+                                                );
+                                                setIsSubmitted(true);
+                                            },
                                         },
                                     );
                                 }}
@@ -429,7 +433,7 @@ export default function Show({ transportRoute }) {
                                     name="transport_route_id"
                                 />
 
-                                <div className="min-w-0">
+                                <div className={`min-w-0 transition-opacity duration-300 ${isSubmitted ? 'pointer-events-none opacity-50' : ''}`}>
                                     <h2 className="text-xl font-bold text-[#203029]">
                                         Solicitar carga para esta ruta
                                     </h2>
@@ -635,12 +639,36 @@ export default function Show({ transportRoute }) {
                                     </p>
                                 </div>
 
-                                <aside className="min-w-0 rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#eefbf1_100%)] px-5 py-5">
-                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+                                <aside className={`min-w-0 rounded-2xl border px-5 py-5 transition-all duration-500 ${
+                                    isSubmitted
+                                        ? 'border-emerald-400 bg-[linear-gradient(135deg,#d1fae5_0%,#a7f3d0_100%)] shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'
+                                        : 'border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#eefbf1_100%)]'
+                                }`}>
+
+                                    {/* Badge de confirmación — solo visible tras enviar */}
+                                    {isSubmitted && (
+                                        <div className="mb-5 flex items-center gap-3 rounded-xl bg-emerald-600 px-4 py-3 text-white shadow-[0_6px_18px_-6px_rgba(5,150,105,0.55)]">
+                                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20">
+                                                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-bold leading-tight">¡Tu solicitud fue enviada!</p>
+                                                <p className="mt-0.5 text-xs text-emerald-100">Te avisamos cuando sea revisada.</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <p className={`text-xs font-bold uppercase tracking-[0.18em] ${isSubmitted ? 'text-emerald-800' : 'text-emerald-700'}`}>
                                         Costo estimado
                                     </p>
                                     <div className="mt-5 flex items-center gap-4">
-                                        <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl font-bold text-emerald-700">
+                                        <span className={`grid h-16 w-16 shrink-0 place-items-center rounded-full text-2xl font-bold transition-all duration-500 ${
+                                            isSubmitted
+                                                ? 'bg-emerald-600 text-white shadow-[0_6px_18px_-6px_rgba(5,150,105,0.6)]'
+                                                : 'bg-emerald-100 text-emerald-700'
+                                        }`}>
                                             $
                                         </span>
                                         <div className="min-w-0">
@@ -662,18 +690,29 @@ export default function Show({ transportRoute }) {
                                         name="estimated_cost"
                                         value={requestForm.data.estimated_cost}
                                     />
-                                    <button
-                                        type="submit"
-                                        disabled={
-                                            !canSubmit || requestForm.processing
-                                        }
-                                        className="interactive-lift mt-6 inline-flex w-full justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-600 disabled:opacity-60"
-                                    >
-                                        {requestForm.processing
-                                            ? 'Enviando solicitud...'
-                                            : 'Enviar solicitud de carga'}
-                                    </button>
+
+                                    {isSubmitted ? (
+                                        <div className="mt-6 flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                                            </svg>
+                                            Oferta bloqueada · solo 1 por ruta
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="submit"
+                                            disabled={
+                                                !canSubmit || requestForm.processing
+                                            }
+                                            className="interactive-lift mt-6 inline-flex w-full justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+                                        >
+                                            {requestForm.processing
+                                                ? 'Enviando solicitud...'
+                                                : 'Enviar solicitud de carga'}
+                                        </button>
+                                    )}
                                 </aside>
+
                             </form>
                         </section>
                 </div>

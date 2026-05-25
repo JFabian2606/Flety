@@ -91,6 +91,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/productor/solicitudes', [TransportRequestController::class, 'store'])
         ->middleware(['verified', 'role:productor'])
         ->name('producer.transport-requests.store');
+    Route::get('/productor/solicitudes', [TransportRequestController::class, 'producerIndex'])
+        ->middleware(['verified', 'role:productor'])
+        ->name('producer.requests.index');
 
     Route::get('/administrador/panel', [DashboardController::class, 'admin'])
         ->middleware(['verified', 'role:administrador'])
