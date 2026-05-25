@@ -109,6 +109,58 @@ class TransportRequestController extends Controller
             ],
         ]);
     }
+    public function producerIndex(Request $request): Response
+    {
+        $producer = $request->user()?->producerProfile;
+
+        abort_if(! $producer, 403);
+
+        $requests = TransportRequest::query()
+            ->with([
+                'route' => function ($query) {
+                    $query->select('id', 'transporter_id', 'vehicle_id', 'origin', 'destination', 'departure_at', 'status');
+                },
+                'route.transporter.user:id,name,phone',
+                'route.vehicle:id,plate,vehicle_type',
+                'service',
+                'service.contact'
+            ])
+            ->where('producer_id', $producer->id)
+            ->latest('requested_at')
+            ->get()
+            ->map(function (TransportRequest $transportRequest) {
+                return [
+                    'id' => $transportRequest->id,
+                    'status' => $transportRequest->status,
+                    'cargo_weight_kg' => (float) $transportRequest->cargo_weight_kg,
+                    'product_type' => $transportRequest->product_type,
+                    'delivery_destination' => $transportRequest->delivery_destination,
+                    'estimated_cost' => $transportRequest->estimated_cost,
+                    'requested_at' => $transportRequest->requested_at->toIso8601String(),
+                    'route' => $transportRequest->route ? [
+                        'id' => $transportRequest->route->id,
+                        'origin' => $transportRequest->route->origin,
+                        'destination' => $transportRequest->route->destination,
+                        'departure_at' => $transportRequest->route->departure_at?->toIso8601String(),
+                        'status' => $transportRequest->route->status,
+                    ] : null,
+                    'transporter' => $transportRequest->route?->transporter?->user ? [
+                        'name' => $transportRequest->route->transporter->user->name,
+                        'phone' => $transportRequest->status === TransportRequest::STATUS_ACCEPTED && $transportRequest->service?->contact?->enabled_at
+                            ? $transportRequest->service->contact->shared_whatsapp ?? $transportRequest->service->contact->shared_phone
+                            : null,
+                    ] : null,
+                    'vehicle' => $transportRequest->route?->vehicle ? [
+                        'plate' => $transportRequest->route->vehicle->plate,
+                        'vehicle_type' => $transportRequest->route->vehicle->vehicle_type,
+                    ] : null,
+                ];
+            });
+
+        return Inertia::render('Producer/Requests/Index', [
+            'requests' => $requests,
+        ]);
+    }
 
     public function store(StoreTransportRequestRequest $request, TransportCostEstimator $costEstimator): RedirectResponse
     {

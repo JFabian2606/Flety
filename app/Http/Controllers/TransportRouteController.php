@@ -288,6 +288,11 @@ class TransportRouteController extends Controller
                     'name' => $transportRoute->transporter->user->name,
                 ] : null,
             ],
+            'already_requested' => $request->user()
+                ?->producer
+                ?->transportRequests()
+                ->where('transport_route_id', $transportRoute->id)
+                ->exists() ?? false,
         ]);
     }
 
