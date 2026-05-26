@@ -376,7 +376,7 @@ class DashboardController extends Controller
             ->where('status', Service::STATUS_CONFIRMED)
             ->count();
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('Admin/Dashboard/Index', [
             'dashboardRole' => Role::ADMIN,
             'entryRoute' => null,
             'dashboardData' => [

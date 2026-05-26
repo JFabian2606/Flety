@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\AdminRouteController;
+use App\Http\Controllers\AdminStatsController;
+use App\Http\Controllers\AdminVehicleController;
 use App\Http\Controllers\AuthLoadingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -98,6 +101,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/administrador/panel', [DashboardController::class, 'admin'])
         ->middleware(['verified', 'role:administrador'])
         ->name('admin.dashboard');
+    Route::get('/administrador/estadisticas', [AdminStatsController::class, 'index'])
+        ->middleware(['verified', 'role:administrador'])
+        ->name('admin.stats.index');
+    Route::get('/administrador/rutas', [AdminRouteController::class, 'index'])
+        ->middleware(['verified', 'role:administrador'])
+        ->name('admin.routes.index');
+    Route::get('/administrador/vehiculos/validar', [AdminVehicleController::class, 'index'])
+        ->middleware(['verified', 'role:administrador'])
+        ->name('admin.vehicles.index');
     Route::get('/administrador/transportistas/validar', [TransporterVerificationController::class, 'index'])
         ->middleware(['verified', 'role:administrador'])
         ->name('admin.transporters.index');
