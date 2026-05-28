@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminRouteController;
+use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminStatsController;
 use App\Http\Controllers\AdminVehicleController;
 use App\Http\Controllers\AuthLoadingController;
@@ -107,6 +108,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/administrador/rutas', [AdminRouteController::class, 'index'])
         ->middleware(['verified', 'role:administrador'])
         ->name('admin.routes.index');
+    Route::post('/administrador/rutas/{route}/cancel', [AdminRouteController::class, 'cancel'])
+        ->middleware(['verified', 'role:administrador'])
+        ->name('admin.routes.cancel');
+    Route::get('/administrador/reportes', [AdminReportController::class, 'index'])
+        ->middleware(['verified', 'role:administrador'])
+        ->name('admin.reports.index');
     Route::get('/administrador/vehiculos/validar', [AdminVehicleController::class, 'index'])
         ->middleware(['verified', 'role:administrador'])
         ->name('admin.vehicles.index');
