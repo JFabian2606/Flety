@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 
 const statusLabels = {
     available: 'Aprobado',
@@ -142,12 +143,19 @@ function VehicleCard({ vehicle }) {
     );
 }
 
-export default function AdminVehiclesIndex({ vehicles = [] }) {
+export default function AdminVehiclesIndex({ vehicles = [], filters = {} }) {
     const { flash } = usePage().props;
+    const [search, setSearch] = useState(filters.search || '');
+    const [status, setStatus] = useState(filters.status || 'pending');
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        router.get(route('admin.vehicles.index'), { search, status }, { preserveState: true });
+    };
 
     return (
         <AuthenticatedLayout>
-            <Head title="Validar vehículos" />
+            <Head title="Validar Vehículos" />
 
             {/* Command Center Hero */}
             <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 py-8 sm:px-6 lg:px-8 text-white">
@@ -171,7 +179,7 @@ export default function AdminVehiclesIndex({ vehicles = [] }) {
                                 <TruckIcon />
                             </div>
                             <div>
-                                <p className="text-xs text-[#bfe6b5] uppercase tracking-wider font-semibold">En cola</p>
+                                <p className="text-xs text-[#bfe6b5] uppercase tracking-wider font-semibold">Mostrando</p>
                                 <p className="text-2xl font-bold text-white">{vehicles.length}</p>
                             </div>
                         </div>
@@ -181,6 +189,39 @@ export default function AdminVehiclesIndex({ vehicles = [] }) {
 
             <div className="min-h-screen bg-slate-50 py-8">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    
+                    {/* Search Bar */}
+                    <form onSubmit={handleSearch} className="mb-6 flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="flex-1">
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Buscar Vehículo</label>
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Placa, marca o nombre del transportista..."
+                                className="block w-full rounded-xl border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm text-slate-900"
+                            />
+                        </div>
+                        <div className="w-full sm:w-48">
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Estado</label>
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className="block w-full rounded-xl border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm text-slate-900"
+                            >
+                                <option value="">Todos</option>
+                                <option value="pending">Pendientes</option>
+                                <option value="available">Aprobados</option>
+                                <option value="rejected">Rechazados</option>
+                                <option value="in_transit">En tránsito</option>
+                            </select>
+                        </div>
+                        <div className="flex items-end">
+                            <button type="submit" className="w-full sm:w-auto justify-center inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none">
+                                Filtrar
+                            </button>
+                        </div>
+                    </form>
                     
                     {/* Flash Messages */}
                     {flash.success && (
