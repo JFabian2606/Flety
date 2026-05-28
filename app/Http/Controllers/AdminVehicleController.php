@@ -12,14 +12,29 @@ class AdminVehicleController extends Controller
 {
     public function index(Request $request): Response
     {
-        $pendingVehicles = Vehicle::query()
+        $filters = [
+            'search' => trim($request->string('search')->toString()),
+            'status' => $request->string('status', Vehicle::STATUS_PENDING)->toString(),
+        ];
+
+        $vehicles = Vehicle::query()
             ->with('transporter.user:id,name,phone')
-            ->where('status', Vehicle::STATUS_PENDING)
+            ->when($filters['status'] !== '', fn ($q) => $q->where('status', $filters['status']))
+            ->when($filters['search'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('plate', 'like', '%'.$filters['search'].'%')
+                        ->orWhere('brand', 'like', '%'.$filters['search'].'%')
+                        ->orWhereHas('transporter.user', function ($userQ) use ($filters) {
+                            $userQ->where('name', 'like', '%'.$filters['search'].'%');
+                        });
+                });
+            })
             ->latest()
             ->get();
 
         return Inertia::render('Admin/Vehicles/Index', [
-            'vehicles' => $pendingVehicles->map(function (Vehicle $vehicle) {
+            'filters' => $filters,
+            'vehicles' => $vehicles->map(function (Vehicle $vehicle) {
                 return [
                     'id' => $vehicle->id,
                     'plate' => $vehicle->plate,

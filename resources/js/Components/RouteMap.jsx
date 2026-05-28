@@ -8,7 +8,7 @@ import {
     useMap,
     useMapEvents,
 } from 'react-leaflet';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import L from 'leaflet';
 import { colombiaBoundary } from '@/Data/colombiaBoundary';
 
@@ -88,13 +88,75 @@ function hasPoint(lat, lng) {
 }
 
 function routePositions(route) {
-    const geometryPositions = Array.isArray(route.route_geometry)
-        ? route.route_geometry
+    if (Array.isArray(route.route_geometry) && route.route_geometry.length >= 2) {
+        return route.route_geometry
             .map((point) => [Number(point[1]), Number(point[0])])
-            .filter(([lat, lng]) => hasPoint(lat, lng))
-        : [];
+            .filter(([lat, lng]) => hasPoint(lat, lng));
+    }
+    return [];
+}
 
-    return geometryPositions;
+// Global cache for OSRM routes to avoid duplicate fetches
+const osrmCache = new Map();
+
+function useOsrmGeometry(route) {
+    const [geometry, setGeometry] = useState(null);
+
+    useEffect(() => {
+        const hasGeom = Array.isArray(route.route_geometry) && route.route_geometry.length >= 2;
+        if (hasGeom) {
+            setGeometry(route.route_geometry);
+            return;
+        }
+
+        if (!hasPoint(route.origin_lat, route.origin_lng) || !hasPoint(route.destination_lat, route.destination_lng)) {
+            return;
+        }
+
+        const cacheKey = `${route.origin_lng},${route.origin_lat};${route.destination_lng},${route.destination_lat}`;
+        
+        if (osrmCache.has(cacheKey)) {
+            setGeometry(osrmCache.get(cacheKey));
+            return;
+        }
+
+        // Fetch from public OSRM
+        const url = `https://router.project-osrm.org/route/v1/driving/${route.origin_lng},${route.origin_lat};${route.destination_lng},${route.destination_lat}?overview=full&geometries=geojson`;
+        
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates) {
+                    const coords = data.routes[0].geometry.coordinates;
+                    osrmCache.set(cacheKey, coords);
+                    setGeometry(coords);
+                }
+            })
+            .catch(() => {});
+    }, [route]);
+
+    if (!geometry) return [];
+    
+    return geometry
+        .map((point) => [Number(point[1]), Number(point[0])])
+        .filter(([lat, lng]) => hasPoint(lat, lng));
+}
+
+function RoutePolyline({ route, color }) {
+    const positions = useOsrmGeometry(route);
+    
+    if (positions.length < 2) return null;
+
+    return (
+        <Polyline
+            positions={positions}
+            pathOptions={{
+                color,
+                opacity: 0.92,
+                weight: 5,
+            }}
+        />
+    );
 }
 
 function routeColor(index) {
@@ -239,6 +301,7 @@ function FitRouteBounds({ routes, originPoint, destinationPoint, draftRoute }) {
 
 export default function RouteMap({
     routes = [],
+    selectedRouteId = null,
     originPoint = null,
     destinationPoint = null,
     selectable = false,
@@ -323,11 +386,8 @@ export default function RouteMap({
                     </Marker>
                 ) : null}
 
-                {routePositions(draftRoute ?? {}).length >= 2 ? (
-                    <Polyline
-                        positions={routePositions(draftRoute)}
-                        pathOptions={{ color: '#1677ff', weight: 5 }}
-                    />
+                {draftRoute ? (
+                    <RoutePolyline route={draftRoute} color="#1677ff" />
                 ) : null}
 
                 {validRoutes.map((route, index) => {
@@ -339,7 +399,6 @@ export default function RouteMap({
                         ],
                     ];
 
-                    const positions = routePositions(route);
                     const color = routeColor(index);
                     const routeNumber = index + 1;
                     const useEndpointLabels =
@@ -383,16 +442,9 @@ export default function RouteMap({
                                 </Popup>
                             </Marker>
 
-                            {positions.length >= 2 ? (
-                                <Polyline
-                                    positions={positions}
-                                    pathOptions={{
-                                        color,
-                                        opacity: 0.92,
-                                        weight: 5,
-                                    }}
-                                />
-                            ) : null}
+                            {(selectedRouteId === route.id || validRoutes.length === 1) && (
+                                <RoutePolyline route={route} color={color} />
+                            )}
                         </Fragment>
                     );
                 })}

@@ -13,16 +13,32 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransporterVerificationController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $pendingTransporters = Transporter::query()
+        $filters = [
+            'search' => trim($request->string('search')->toString()),
+            'status' => $request->string('status', Transporter::STATUS_PENDING)->toString(),
+        ];
+
+        $transporters = Transporter::query()
             ->with(['user:id,name,email,phone', 'documentVerifications'])
-            ->where('validation_status', Transporter::STATUS_PENDING)
+            ->when($filters['status'] !== '', fn ($q) => $q->where('validation_status', $filters['status']))
+            ->when($filters['search'] !== '', function ($q) use ($filters) {
+                $q->where(function ($sub) use ($filters) {
+                    $sub->where('identity_document', 'like', '%'.$filters['search'].'%')
+                        ->orWhere('driver_license', 'like', '%'.$filters['search'].'%')
+                        ->orWhereHas('user', function ($userQ) use ($filters) {
+                            $userQ->where('name', 'like', '%'.$filters['search'].'%')
+                                  ->orWhere('email', 'like', '%'.$filters['search'].'%');
+                        });
+                });
+            })
             ->latest()
             ->get();
 
         return Inertia::render('Admin/Transporters/Index', [
-            'transporters' => $pendingTransporters
+            'filters' => $filters,
+            'transporters' => $transporters
                 ->map(fn (Transporter $transporter) => [
                     'id' => $transporter->id,
                     'name' => $transporter->user?->name ?? 'Transportista',
