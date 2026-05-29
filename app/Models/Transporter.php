@@ -23,7 +23,16 @@ class Transporter extends Model
         'driver_license',
         'validation_status',
         'rating_average',
+        'payment_methods', // <-- 1. Agregamos el campo aquí
     ];
+
+    // <-- 2. Agregamos este bloque para manejar el JSON automáticamente
+    protected function casts(): array
+    {
+        return [
+            'payment_methods' => 'array',
+        ];
+    }
 
     public function user(): BelongsTo
     {
