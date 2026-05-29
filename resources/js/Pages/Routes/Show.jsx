@@ -202,35 +202,7 @@ function safeValue(value, fallback = 'Sin dato') {
         : value;
 }
 
-function DetailItem({ label, value, featured = false }) {
-    return (
-        <div
-            className={`flex min-w-0 gap-3 rounded-xl border px-4 py-3 shadow-[0_16px_36px_-32px_rgba(31,74,49,0.45)] ${
-                featured
-                    ? 'border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#eefbf1_100%)]'
-                    : 'border-[#dfe8dc] bg-white'
-            }`}
-        >
-            <span
-                className={`mt-1 h-9 w-9 shrink-0 rounded-xl ${
-                    featured ? 'bg-emerald-100' : 'bg-[#eef7ec]'
-                }`}
-            />
-            <div className="min-w-0">
-                <p
-                    className={`text-xs font-semibold ${
-                        featured ? 'text-emerald-700' : 'text-[#6f7b72]'
-                    }`}
-                >
-                    {label}
-                </p>
-                <div className="mt-1 break-words text-sm font-bold leading-5 text-[#203029]">
-                    {safeValue(value, featured ? 'Pendiente' : 'Sin dato')}
-                </div>
-            </div>
-        </div>
-    );
-}
+// DetailItem removido para usar tarjetas agrupadas
 
 function FieldError({ message }) {
     if (!message) {
@@ -333,73 +305,105 @@ export default function Show({ transportRoute, already_requested }) {
                             )}
                         </section>
 
-                        <section className="animate-panel-rise rounded-2xl border border-[#d8e8d4] bg-white p-4 shadow-[0_18px_44px_-36px_rgba(31,74,49,0.35)] sm:p-6">
-                            <h2 className="text-xl font-bold text-[#203029]">
-                                Datos completos de la publicacion
+                        <section className="animate-panel-rise rounded-2xl border border-[#d8e8d4] bg-white p-5 shadow-[0_18px_44px_-36px_rgba(31,74,49,0.35)] sm:p-8">
+                            <h2 className="mb-6 text-xl font-bold text-[#203029]">
+                                Datos completos de la publicación
                             </h2>
 
-                            <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                                <DetailItem
-                                    label="Origen"
-                                    value={transportRoute.origin}
-                                />
-                                <DetailItem
-                                    label="Destino"
-                                    value={transportRoute.destination}
-                                />
-                                <DetailItem
-                                    label="Fecha de salida"
-                                    value={formatDate(transportRoute.departure_at)}
-                                />
-                                <DetailItem
-                                    label="Transportista"
-                                    value={
-                                        transportRoute.transporter?.id ? (
-                                            <Link
-                                                href={route(
-                                                    'producer.transporters.show',
-                                                    transportRoute.transporter.id,
+                            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                {/* Trayecto */}
+                                <div className="rounded-xl border border-emerald-100 bg-[#f7faf4] p-5 shadow-sm transition hover:shadow-md hover:border-emerald-200">
+                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-[#427c46]">
+                                        <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                        </svg>
+                                        Detalles del Trayecto
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-[#6f7b72]">Origen</p>
+                                            <p className="mt-0.5 font-bold text-[#203029]">{safeValue(transportRoute.origin)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-[#6f7b72]">Destino</p>
+                                            <p className="mt-0.5 font-bold text-[#203029]">{safeValue(transportRoute.destination)}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 border-t border-[#d8e8d4] pt-3">
+                                            <div>
+                                                <p className="text-xs font-semibold uppercase tracking-wider text-[#6f7b72]">Distancia</p>
+                                                <p className="mt-0.5 font-bold text-[#203029]">{transportRoute.distance_km ? `${transportRoute.distance_km} km` : 'Pendiente'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-semibold uppercase tracking-wider text-[#6f7b72]">Tiempo aprox.</p>
+                                                <p className="mt-0.5 font-bold text-[#203029]">{formatDuration(transportRoute.estimated_duration_minutes)}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Capacidad */}
+                                <div className="rounded-xl border border-sky-100 bg-[#f4f9fb] p-5 shadow-sm transition hover:shadow-md hover:border-sky-200">
+                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-sky-800">
+                                        <svg className="h-5 w-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                                        </svg>
+                                        Capacidad y Carga
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-sky-700/70">Peso mínimo permitido</p>
+                                            <p className="mt-0.5 text-lg font-bold text-slate-800">{transportRoute.min_cargo_weight_kg} kg</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-sky-700/70">Peso disponible</p>
+                                            <p className="mt-0.5 text-2xl font-black text-sky-700">{transportRoute.available_capacity_kg} kg</p>
+                                        </div>
+                                        <div className="rounded-lg bg-sky-100/50 p-2.5">
+                                            <p className="text-xs font-medium text-sky-800">
+                                                Asegúrate de que tu carga se encuentre dentro de estos rangos.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Transportista */}
+                                <div className="rounded-xl border border-amber-100 bg-[#fffdf5] p-5 shadow-sm transition hover:shadow-md hover:border-amber-200">
+                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-amber-800">
+                                        <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        Responsable del Viaje
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-amber-700/70">Transportista</p>
+                                            <p className="mt-0.5 font-bold text-[#203029]">
+                                                {transportRoute.transporter?.id ? (
+                                                    <Link
+                                                        href={route('producer.transporters.show', transportRoute.transporter.id)}
+                                                        className="text-amber-700 underline-offset-4 transition hover:text-amber-600 hover:underline"
+                                                    >
+                                                        {transportRoute.transporter?.name}
+                                                    </Link>
+                                                ) : (
+                                                    transportRoute.transporter?.name
                                                 )}
-                                                className="text-emerald-700 underline-offset-4 hover:underline"
-                                            >
-                                                {transportRoute.transporter?.name}
-                                            </Link>
-                                        ) : (
-                                            transportRoute.transporter?.name
-                                        )
-                                    }
-                                />
-                                <DetailItem
-                                    label="Vehiculo"
-                                    value={
-                                        transportRoute.vehicle
-                                            ? `${transportRoute.vehicle.vehicle_type} - ${transportRoute.vehicle.plate}`
-                                            : null
-                                    }
-                                />
-                                <DetailItem
-                                    label="Peso minimo"
-                                    value={`${transportRoute.min_cargo_weight_kg} kg`}
-                                />
-                                <DetailItem
-                                    label="Peso maximo disponible"
-                                    value={`${transportRoute.available_capacity_kg} kg`}
-                                />
-                                <DetailItem
-                                    label="Distancia"
-                                    value={
-                                        transportRoute.distance_km
-                                            ? `${transportRoute.distance_km} km`
-                                            : 'Pendiente'
-                                    }
-                                />
-                                <DetailItem
-                                    featured
-                                    label="Tiempo aproximado"
-                                    value={formatDuration(
-                                        transportRoute.estimated_duration_minutes,
-                                    )}
-                                />
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-amber-700/70">Vehículo</p>
+                                            <p className="mt-0.5 font-bold text-[#203029]">
+                                                {transportRoute.vehicle
+                                                    ? `${transportRoute.vehicle.vehicle_type} - ${transportRoute.vehicle.plate}`
+                                                    : 'Sin dato'}
+                                            </p>
+                                        </div>
+                                        <div className="border-t border-amber-100 pt-3">
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-amber-700/70">Fecha de salida</p>
+                                            <p className="mt-0.5 font-bold text-amber-700">{formatDate(transportRoute.departure_at)}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </section>
 
@@ -691,25 +695,34 @@ export default function Show({ transportRoute, already_requested }) {
                                         value={requestForm.data.estimated_cost}
                                     />
 
-                                    {/* Nueva sección: Métodos de pago (HU14) */}
+                                    {/* Nueva sección: Métodos de pago (HU14) remodelada */}
                                     {transportRoute.transporter?.payment_methods?.length > 0 && (
-                                        <div className="mt-6 border-t border-emerald-300/60 pt-5">
-                                            <p className={`text-xs font-bold uppercase tracking-[0.18em] ${isSubmitted ? 'text-emerald-800' : 'text-emerald-700'}`}>
-                                                Medios de pago aceptados
-                                            </p>
-                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                {transportRoute.transporter.payment_methods.map((method) => (
-                                                    <span key={method} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100/80 px-3 py-1.5 text-xs font-bold text-emerald-900 border border-emerald-200/50">
-                                                        <svg className="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                                        </svg>
-                                                        {method}
-                                                    </span>
-                                                ))}
+                                        <div className="mt-8 overflow-hidden rounded-2xl border border-emerald-300 bg-[linear-gradient(135deg,#dcfce7_0%,#ecfdf5_100%)] shadow-inner">
+                                            <div className="flex items-center gap-3 border-b border-emerald-300/60 bg-emerald-500/10 px-5 py-3">
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white">
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </span>
+                                                <p className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-900">
+                                                    Medios de Pago Aceptados
+                                                </p>
                                             </div>
-                                            <p className="mt-3 text-xs leading-5 text-emerald-800/80 font-medium">
-                                                Acuerda el método de pago exacto directamente con el transportista una vez tu solicitud sea aceptada.
-                                            </p>
+                                            <div className="px-5 py-4">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {transportRoute.transporter.payment_methods.map((method) => (
+                                                        <span key={method} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-black text-emerald-800 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                                                            <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                            </svg>
+                                                            {method}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                <p className="mt-3 text-xs font-semibold leading-relaxed text-emerald-800/80">
+                                                    Podrás contactar al transportista para enviarle el comprobante de pago una vez tu solicitud de envío haya sido aceptada.
+                                                </p>
+                                            </div>
                                         </div>
                                     )}
 
