@@ -371,99 +371,112 @@ export default function TransporterRequests({
         <AuthenticatedLayout>
             <Head title="Solicitudes y contactos" />
 
-            <div className="min-h-screen bg-[linear-gradient(180deg,#eef7ec_0%,#f7faf4_100%)] py-5 sm:py-7">
-                <div className="mx-auto flex max-w-[1540px] flex-col gap-5 px-3 sm:px-5 lg:px-8">
-                    <FlashMessages success={flash.success} error={flash.error} />
-
-                    <section className="animate-panel-rise overflow-hidden rounded-2xl border border-[#0d4f2a]/20 bg-[linear-gradient(135deg,#06451f_0%,#083f24_58%,#0f6b38_100%)] p-5 text-white shadow-[0_28px_70px_-52px_rgba(4,59,31,0.85)] sm:p-6">
-                        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                            <div>
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#bfe6b5]">
+            <div className="w-full min-h-screen bg-slate-50">
+                {/* Edge-to-Edge Hero */}
+                <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 pb-12 pt-28 sm:pt-32 sm:px-6 lg:px-8 text-white -mt-20 sm:-mt-24">
+                    <div className="mx-auto max-w-[1560px]">
+                        <FlashMessages success={flash.success} error={flash.error} />
+                        
+                        <div className="mt-4 flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2 sm:px-4">
+                            <div className="min-w-0 max-w-3xl">
+                                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#bfe6b5] mb-4">
+                                    <span className="grid h-6 w-6 place-items-center rounded-lg border border-white/15 bg-white/10 text-sm">
+                                        +
+                                    </span>
                                     HU11 - Solicitudes de carga
                                 </p>
-                                <h1 className="mt-4 max-w-3xl text-3xl font-bold leading-tight tracking-[-0.03em] sm:text-4xl">
+                                <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.7rem]">
                                     Recibe y decide solicitudes vinculadas a tus rutas activas
                                 </h1>
-                                <p className="mt-4 max-w-3xl text-sm leading-6 text-[#d9ead3]">
-                                    Revisa productores, peso, producto y destino antes
-                                    de aceptar. Al confirmar, el contacto queda
-                                    habilitado para coordinar el servicio.
+                                <p className="mt-4 text-lg text-[#d9ead3] max-w-2xl leading-relaxed">
+                                    Revisa productores, peso, producto y destino antes de aceptar. Al confirmar, el contacto queda habilitado para coordinar el servicio.
                                 </p>
                             </div>
-                            <div className="rounded-2xl border border-white/16 bg-white/10 px-5 py-4 text-sm text-white shadow-[0_24px_48px_-42px_rgba(0,0,0,0.6)]">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#bfe6b5]">
-                                    Alerta actual
-                                </p>
-                                <p className="mt-2 text-3xl font-bold">
-                                    {requestSummary.new_count ?? 0}
-                                </p>
-                                <p className="mt-1 text-white/75">
-                                    solicitudes nuevas
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                            {summaryCards.map((item) => (
-                                <div
-                                    key={item.label}
-                                    className="rounded-2xl border border-white/16 bg-white/8 px-4 py-3"
-                                >
-                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#bfe6b5]">
-                                        {item.label}
+                            <div className="flex flex-col items-end gap-3">
+                                <div className="rounded-2xl border border-white/16 bg-white/10 px-6 py-5 text-sm text-white shadow-[0_24px_48px_-42px_rgba(0,0,0,0.6)] backdrop-blur-sm text-right lg:min-w-[200px]">
+                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#bfe6b5]">
+                                        Alerta actual
                                     </p>
-                                    <p className="mt-2 text-2xl font-bold">
-                                        {item.value}
+                                    <p className="mt-2 text-4xl font-bold">
+                                        {requestSummary.new_count ?? 0}
+                                    </p>
+                                    <p className="mt-1 text-white/75 font-semibold">
+                                        solicitudes nuevas
                                     </p>
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </section>
+                    </div>
+                </div>
 
-                    <section className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-                        <article className={cardClassName()}>
-                            <SectionTitle
-                                eyebrow="Solicitudes"
-                                title="Solicitudes recibidas"
-                                description="Solo se muestran solicitudes pendientes asociadas a tus rutas publicadas, futuras y disponibles."
-                            />
-
-                            <div className="mt-6 grid gap-4">
-                                {incomingRequests.length ? (
-                                    incomingRequests.map((transportRequest) => (
-                                        <TransportRequestCard
-                                            key={transportRequest.id}
-                                            transportRequest={transportRequest}
-                                            decisionForm={decisionForm}
-                                        />
-                                    ))
-                                ) : (
-                                    <EmptyState message="No hay solicitudes pendientes para tus rutas activas." />
-                                )}
+                <div className="bg-slate-50">
+                    <div className="mx-auto max-w-[1560px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                        <section className="animate-panel-rise overflow-hidden">
+                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                {summaryCards.map((item) => (
+                                    <div
+                                        key={item.label}
+                                        className="min-w-0 rounded-2xl bg-[#084826] p-5 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.65)] text-white relative overflow-hidden"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-br from-[#106c3a]/50 to-transparent"></div>
+                                        <div className="relative z-10 flex flex-col h-full">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9ce388]">
+                                                {item.label}
+                                            </p>
+                                            <p className="mt-3 text-3xl font-bold">
+                                                {item.value}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </article>
+                        </section>
 
-                        <article className={cardClassName()}>
-                            <SectionTitle
-                                eyebrow="Confirmacion"
-                                title="Servicios con contacto activo"
-                                description="Desde aqui puedes llamar o abrir WhatsApp con un solo clic una vez aceptada la solicitud."
-                            />
+                        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+                            <article className={cardClassName()}>
+                                <SectionTitle
+                                    eyebrow="Solicitudes"
+                                    title="Solicitudes recibidas"
+                                    description="Solo se muestran solicitudes pendientes asociadas a tus rutas publicadas, futuras y disponibles."
+                                />
 
-                            <div className="mt-6 grid gap-4">
-                                {confirmedServices.length ? (
-                                    confirmedServices.map((service) => (
-                                        <ServiceCard
-                                            key={service.id}
-                                            service={service}
-                                        />
-                                    ))
-                                ) : (
-                                    <EmptyState message="Aun no tienes servicios confirmados con contacto habilitado." />
-                                )}
-                            </div>
-                        </article>
-                    </section>
+                                <div className="mt-6 grid gap-4">
+                                    {incomingRequests.length ? (
+                                        incomingRequests.map((transportRequest) => (
+                                            <TransportRequestCard
+                                                key={transportRequest.id}
+                                                transportRequest={transportRequest}
+                                                decisionForm={decisionForm}
+                                            />
+                                        ))
+                                    ) : (
+                                        <EmptyState message="No hay solicitudes pendientes para tus rutas activas." />
+                                    )}
+                                </div>
+                            </article>
+
+                            <article className={cardClassName()}>
+                                <SectionTitle
+                                    eyebrow="Confirmacion"
+                                    title="Servicios con contacto activo"
+                                    description="Desde aqui puedes llamar o abrir WhatsApp con un solo clic una vez aceptada la solicitud."
+                                />
+
+                                <div className="mt-6 grid gap-4">
+                                    {confirmedServices.length ? (
+                                        confirmedServices.map((service) => (
+                                            <ServiceCard
+                                                key={service.id}
+                                                service={service}
+                                            />
+                                        ))
+                                    ) : (
+                                        <EmptyState message="Aun no tienes servicios confirmados con contacto habilitado." />
+                                    )}
+                                </div>
+                            </article>
+                        </section>
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>
