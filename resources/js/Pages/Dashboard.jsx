@@ -312,6 +312,7 @@ function TransporterOperations({
                                             </p>
                                         </div>
                                     </div>
+
                                     <Link
                                         href={route('transporter.documents.index')}
                                         className={`interactive-lift inline-flex rounded-xl px-4 py-2 text-sm font-medium backdrop-blur-sm border transition ${
@@ -322,6 +323,8 @@ function TransporterOperations({
                                     >
                                         {isVerified ? '✓ Verificado' : '⚠ En revisión (Validar documentos)'}
                                     </Link>
+=======
+                                    
                                 </div>
                             </div>
                         </div>
