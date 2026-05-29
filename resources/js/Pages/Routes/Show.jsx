@@ -241,7 +241,32 @@ export default function Show({ transportRoute, already_requested }) {
         <AuthenticatedLayout>
             <Head title="Detalle de ruta" />
 
-            <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,#e5f5dc_0%,rgba(229,245,220,0)_34%),linear-gradient(180deg,#f8fbf6_0%,#eef7ec_100%)] px-3 pb-6 sm:px-5 lg:px-6">
+            {/* HERO / CONTENEDOR VERDE SUPERIOR */}
+            <div className="-mt-16 sm:-mt-20 bg-[linear-gradient(135deg,#008b55_0%,#00603b_100%)] px-4 pb-20 pt-24 sm:px-6 sm:pb-28 sm:pt-32 lg:px-8">
+                <div className="mx-auto max-w-[1480px]">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-200">
+                                Mapa publicado
+                            </p>
+                            <h1 className="mt-3 break-words text-2xl font-bold leading-tight text-white sm:text-4xl">
+                                Trayecto completo de la ruta
+                            </h1>
+                            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-emerald-50">
+                                Esta vista muestra los detalles completos y permite solicitar la carga para este viaje.
+                            </p>
+                        </div>
+                        <div className="flex flex-col sm:items-end gap-3">
+                            <span className="inline-flex w-fit items-center rounded-xl bg-emerald-900/40 px-4 py-2.5 text-sm font-bold text-emerald-100 backdrop-blur-sm border border-emerald-500/30">
+                                Publicada
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* CONTENIDO PRINCIPAL */}
+            <div className="-mt-12 min-h-screen px-3 pb-12 sm:px-5 lg:px-6">
                 <div className="mx-auto max-w-[1480px] space-y-4">
                         {flash.success ? (
                             <section className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
@@ -254,40 +279,21 @@ export default function Show({ transportRoute, already_requested }) {
                             </section>
                         ) : null}
 
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2">
                             <Link
                                 href={route('producer.dashboard')}
-                                className="interactive-lift inline-flex w-full items-center justify-center rounded-xl border border-[#dce6d8] bg-white px-4 py-3 text-sm font-bold text-emerald-700 shadow-[0_14px_34px_-30px_rgba(31,74,49,0.45)] transition hover:bg-[#f4f8ef] sm:w-auto"
+                                className="interactive-lift inline-flex w-full items-center justify-center rounded-xl border border-[#dce6d8] bg-white/90 backdrop-blur-sm px-4 py-3 text-sm font-bold text-emerald-800 shadow-sm transition hover:bg-white sm:w-auto"
                             >
                                 Volver al panel
                             </Link>
 
                             <Link
                                 href={route('producer.routes.index')}
-                                className="interactive-lift inline-flex w-full items-center justify-center rounded-xl border border-emerald-600 bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-[0_14px_34px_-30px_rgba(31,74,49,0.45)] transition hover:bg-emerald-50 sm:w-auto"
+                                className="interactive-lift inline-flex w-full items-center justify-center rounded-xl border border-emerald-600 bg-white/90 backdrop-blur-sm px-5 py-3 text-sm font-bold text-emerald-800 shadow-sm transition hover:bg-white sm:w-auto"
                             >
                                 Ver otras rutas
                             </Link>
                         </div>
-
-                        <section className="animate-panel-rise rounded-2xl border border-[#d8e8d4] bg-white p-4 shadow-[0_20px_52px_-40px_rgba(31,74,49,0.45)] sm:p-6">
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                <div className="min-w-0">
-                                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#008b55]">
-                                        Mapa publicado
-                                    </p>
-                                    <h1 className="mt-3 break-words text-2xl font-bold leading-tight text-[#17221d] sm:text-3xl">
-                                        Trayecto completo de la ruta
-                                    </h1>
-                                    <p className="mt-2 max-w-3xl text-sm leading-6 text-[#52615a]">
-                                        Esta vista muestra una sola ruta para revisar el recorrido sin mezclar otras publicaciones.
-                                    </p>
-                                </div>
-                                <span className="inline-flex w-fit items-center rounded-xl bg-[#edf7e9] px-4 py-3 text-sm font-bold text-[#427c46]">
-                                    Publicada
-                                </span>
-                            </div>
-                        </section>
 
                         <section className="animate-panel-rise overflow-hidden rounded-2xl border border-[#d8e8d4] bg-white shadow-[0_20px_52px_-40px_rgba(31,74,49,0.45)]">
                             {hasMap ? (
