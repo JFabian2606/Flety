@@ -9,12 +9,14 @@ function StatusBadge({ status }) {
         pending: 'bg-amber-100 text-amber-800 border-amber-200',
         accepted: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         rejected: 'bg-rose-100 text-rose-800 border-rose-200',
+        expired: 'bg-gray-100 text-gray-600 border-gray-300',
     };
 
     const labels = {
         pending: 'Pendiente',
         accepted: 'Aceptado',
         rejected: 'Rechazado',
+        expired: 'Expirado',
     };
 
     return (
