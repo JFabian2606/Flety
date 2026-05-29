@@ -130,9 +130,9 @@ class TransportRouteController extends Controller
                 ->where('min_cargo_weight_kg', '<=', $routeFilters['cargo_weight_kg']))
             ->whereColumn('available_capacity_kg', '>=', 'min_cargo_weight_kg')
             ->orderBy('departure_at')
-            ->limit(50)
-            ->get()
-            ->map(function (TransportRoute $route) use ($costEstimator, $routeFilters) {
+            ->paginate(5)
+            ->withQueryString()
+            ->through(function (TransportRoute $route) use ($costEstimator, $routeFilters) {
                 $distanceKm = $route->distance_km !== null ? (float) $route->distance_km : null;
 
                 return [
