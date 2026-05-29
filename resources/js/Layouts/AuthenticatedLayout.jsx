@@ -133,6 +133,8 @@ export default function AuthenticatedLayout({ header, children }) {
 
     const styles = getDrawerStyles();
 
+    const { url } = usePage();
+
     return (
         <div className="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#eef7ec_0%,#f6faf3_42%,#fbfcf8_100%)] text-[#203029]">
             <button
@@ -272,7 +274,8 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             ) : null}
 
-            <main className="animate-app-page-in min-w-0 overflow-x-hidden pt-20 sm:pt-24">
+            {/* Añadimos key={url} para que React desmonte y vuelva a montar el main en cada cambio de ruta, disparando la animación animate-app-page-in */}
+            <main key={url} className="animate-app-page-in min-w-0 overflow-x-hidden pt-20 sm:pt-24">
                 {children}
             </main>
         </div>
