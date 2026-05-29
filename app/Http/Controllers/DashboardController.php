@@ -48,7 +48,11 @@ class DashboardController extends Controller
         $incomingRequests = $transporter
             ? TransportRequest::query()
                 ->with('route:id,origin,destination,transporter_id')
-                ->whereHas('route', fn (Builder $query) => $query->where('transporter_id', $transporter->id))
+                ->whereHas('route', fn (Builder $query) => $query
+                    ->where('transporter_id', $transporter->id)
+                    ->where('status', TransportRoute::STATUS_PUBLISHED)
+                    ->where('departure_at', '>', now())
+                )
                 ->latest('requested_at')
                 ->take(4)
                 ->get()
@@ -57,7 +61,11 @@ class DashboardController extends Controller
         $pendingRequestsCount = $transporter
             ? TransportRequest::query()
                 ->where('status', TransportRequest::STATUS_PENDING)
-                ->whereHas('route', fn (Builder $query) => $query->where('transporter_id', $transporter->id))
+                ->whereHas('route', fn (Builder $query) => $query
+                    ->where('transporter_id', $transporter->id)
+                    ->where('status', TransportRoute::STATUS_PUBLISHED)
+                    ->where('departure_at', '>', now())
+                )
                 ->count()
             : 0;
 

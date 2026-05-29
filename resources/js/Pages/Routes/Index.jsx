@@ -3215,7 +3215,8 @@ function ProducerView({ availableRoutes, routeFilters = {} }) {
     );
 }
 
-function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
+function ProducerRoutesMarketplaceView({ availableRoutes: paginatedRoutes, routeFilters = {} }) {
+    const availableRoutes = paginatedRoutes?.data || paginatedRoutes;
     const [searchFilters, setSearchFilters] = useState({
         origin: routeFilters.origin ?? '',
         destination: routeFilters.destination ?? '',
@@ -3629,6 +3630,30 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
                             <EmptyState message="No hay rutas cercanas disponibles con esos filtros." />
                         )}
                     </div>
+
+                    {paginatedRoutes?.links && paginatedRoutes.total > 0 && (
+                        <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <span className="text-sm text-slate-600">
+                                Mostrando {paginatedRoutes.from || 0} a {paginatedRoutes.to || 0} de {paginatedRoutes.total} rutas
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                                {paginatedRoutes.links.map((link, i) => (
+                                    <Link
+                                        key={i}
+                                        href={link.url || '#'}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                                            link.active
+                                                ? 'bg-emerald-600 text-white shadow-sm'
+                                                : link.url
+                                                    ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm'
+                                                    : 'cursor-not-allowed bg-slate-50 text-slate-400 border border-slate-100'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <p className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
                         Los tiempos y costos son estimados. El valor final sera

@@ -9,12 +9,14 @@ function StatusBadge({ status }) {
         pending: 'bg-amber-100 text-amber-800 border-amber-200',
         accepted: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         rejected: 'bg-rose-100 text-rose-800 border-rose-200',
+        expired: 'bg-gray-100 text-gray-600 border-gray-300',
     };
 
     const labels = {
         pending: 'Pendiente',
         accepted: 'Aceptado',
         rejected: 'Rechazado',
+        expired: 'Expirado',
     };
 
     return (
@@ -315,6 +317,20 @@ export default function Index({ logs, filters, stats }) {
                                             <span className="text-sm text-gray-500">Productor</span>
                                             <span className="text-sm font-bold text-emerald-700">
                                                 {selectedLog.transport_request.producer?.user?.name || 'Desconocido'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+                                            <span className="text-sm text-gray-500">Transportista</span>
+                                            <span className="text-sm font-bold text-indigo-700">
+                                                {selectedLog.transport_request.route?.transporter?.user?.name || 'Desconocido'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 border-b border-gray-50 pb-2">
+                                            <span className="text-sm text-gray-500">Vehículo Asignado</span>
+                                            <span className="text-sm font-bold text-gray-900">
+                                                {selectedLog.transport_request.route?.vehicle ? (
+                                                    `${selectedLog.transport_request.route.vehicle.brand} ${selectedLog.transport_request.route.vehicle.model} (Placa: ${selectedLog.transport_request.route.vehicle.license_plate})`
+                                                ) : 'Sin vehículo'}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center border-b border-gray-50 pb-2">
