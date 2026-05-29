@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminRouteController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminStatsController;
 use App\Http\Controllers\AdminVehicleController;
+use App\Http\Controllers\Admin\TransactionLogController;
 use App\Http\Controllers\AuthLoadingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -142,6 +143,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/administrador/vehiculos/{vehicle}/rechazar', [VehicleController::class, 'reject'])
         ->middleware(['verified', 'role:administrador'])
         ->name('admin.vehicles.reject');
+    Route::get('/administrador/transaction-logs', [TransactionLogController::class, 'index'])
+        ->middleware(['verified', 'role:administrador'])
+        ->name('admin.transaction-logs.index');
 });
 
 require __DIR__.'/auth.php';
