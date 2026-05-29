@@ -48,6 +48,7 @@ export default function Index({ logs, filters, stats }) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [selectedLog, setSelectedLog] = useState(null);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -151,7 +152,11 @@ export default function Index({ logs, filters, stats }) {
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {logs.data.map((log) => (
-                                        <tr key={log.id} className={`transition hover:bg-gray-50 ${log.action === 'failed' ? 'bg-red-50/50' : ''}`}>
+                                        <tr 
+                                            key={log.id} 
+                                            onClick={() => setSelectedLog(log)}
+                                            className={`cursor-pointer transition hover:bg-emerald-50 ${log.action === 'failed' ? 'bg-red-50/50 hover:bg-red-100/50' : ''}`}
+                                        >
                                             <td className="px-4 py-4 font-bold text-gray-900">#{log.transport_request_id}</td>
                                             <td className="px-4 py-4 whitespace-nowrap">
                                                 {new Date(log.created_at).toLocaleString('es-CO')}
@@ -186,7 +191,10 @@ export default function Index({ logs, filters, stats }) {
                                                 {log.details ? (
                                                     <button 
                                                         className="text-xs font-bold text-emerald-600 underline hover:text-emerald-800"
-                                                        onClick={() => alert(JSON.stringify(log.details, null, 2))}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            alert(JSON.stringify(log.details, null, 2));
+                                                        }}
                                                     >
                                                         Ver JSON
                                                     </button>
@@ -233,6 +241,121 @@ export default function Index({ logs, filters, stats }) {
                     </section>
                 </div>
             </div>
+
+            {/* MODAL DETALLES DEL LOG */}
+            {selectedLog && (
+                <div className="fixed inset-0 z-50 flex justify-end">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+                        onClick={() => setSelectedLog(null)}
+                    ></div>
+                    
+                    {/* Drawer */}
+                    <div className="relative w-full max-w-md bg-white shadow-2xl animate-drawer-in overflow-y-auto flex flex-col h-full">
+                        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5 bg-[linear-gradient(135deg,#008b55_0%,#00603b_100%)] text-white">
+                            <h3 className="text-lg font-bold">
+                                Auditoría #{selectedLog.transport_request_id}
+                            </h3>
+                            <button onClick={() => setSelectedLog(null)} className="text-white/70 hover:text-white">
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-6 flex-1">
+                            {/* Contexto Técnico */}
+                            <div>
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Contexto Técnico</h4>
+                                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">Actor</span>
+                                        <span className="text-sm font-bold text-gray-900">{selectedLog.user ? selectedLog.user.name : 'Sistema Automático'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">Fecha</span>
+                                        <span className="text-sm font-bold text-gray-900">{new Date(selectedLog.created_at).toLocaleString('es-CO')}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">Dirección IP</span>
+                                        <span className="text-sm font-mono text-gray-900">{selectedLog.ip_address || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-sm text-gray-500">Dispositivo / Navegador</span>
+                                        <span className="text-xs font-mono text-gray-600 break-words">{selectedLog.user_agent || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Cambio de Estados */}
+                            <div>
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Movimiento de Estado</h4>
+                                <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                                    <div className="flex-1 text-center">
+                                        <p className="text-xs text-gray-500 mb-1">Anterior</p>
+                                        <StatusBadge status={selectedLog.old_status} />
+                                    </div>
+                                    <div className="text-gray-300">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                    </div>
+                                    <div className="flex-1 text-center">
+                                        <p className="text-xs text-gray-500 mb-1">Nuevo</p>
+                                        <StatusBadge status={selectedLog.new_status} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Detalles de Negocio */}
+                            {selectedLog.transport_request ? (
+                                <div>
+                                    <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Información del Negocio</h4>
+                                    <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-3">
+                                        <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+                                            <span className="text-sm text-gray-500">Productor</span>
+                                            <span className="text-sm font-bold text-emerald-700">
+                                                {selectedLog.transport_request.producer?.user?.name || 'Desconocido'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+                                            <span className="text-sm text-gray-500">Carga</span>
+                                            <span className="text-sm font-bold text-gray-900">
+                                                {selectedLog.transport_request.cargo_weight_kg} kg de {selectedLog.transport_request.product_type}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 border-b border-gray-50 pb-2">
+                                            <span className="text-sm text-gray-500">Origen a Destino</span>
+                                            <span className="text-sm font-bold text-gray-900">
+                                                {selectedLog.transport_request.route?.origin} ➔ {selectedLog.transport_request.route?.destination}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-500">Costo Estimado</span>
+                                            <span className="text-sm font-bold text-emerald-600">
+                                                ${parseFloat(selectedLog.transport_request.estimated_cost).toLocaleString('es-CO')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                    <p className="text-sm text-amber-800">
+                                        La solicitud original fue eliminada del sistema. No se pueden recuperar los detalles del negocio.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 border-t border-gray-100 bg-gray-50">
+                            <button 
+                                onClick={() => setSelectedLog(null)}
+                                className="w-full rounded-xl bg-gray-200 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-300 transition"
+                            >
+                                Cerrar Panel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
