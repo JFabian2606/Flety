@@ -117,7 +117,6 @@ class TransportRouteController extends Controller
             ->with([
                 'vehicle:id,plate,vehicle_type,capacity_kg',
                 'transporter.user:id,name',
-                'transporter.transporterProfile'
             ])
             ->where('status', TransportRoute::STATUS_PUBLISHED)
             ->where('departure_at', '>', now())
@@ -162,7 +161,7 @@ class TransportRouteController extends Controller
                     'transporter' => $route->transporter?->user ? [
                         'id' => $route->transporter->id,
                         'name' => $route->transporter->user->name,
-                        'payment_methods' => $route->transporter->transporterProfile?->payment_methods ?? [],
+                        'payment_methods' => $route->transporter->payment_methods ?? [],
                     ] : null,
                 ];
             });
@@ -234,7 +233,6 @@ class TransportRouteController extends Controller
         $transportRoute->load([
             'vehicle:id,plate,vehicle_type,capacity_kg',
             'transporter.user:id,name',
-            'transporter.transporterProfile'
         ]);
 
         abort_if(
@@ -289,7 +287,7 @@ class TransportRouteController extends Controller
                 'transporter' => $transportRoute->transporter?->user ? [
                     'id' => $transportRoute->transporter->id,
                     'name' => $transportRoute->transporter->user->name,
-                    'payment_methods' => $transportRoute->transporter->transporterProfile?->payment_methods ?? [],
+                    'payment_methods' => $transportRoute->transporter->payment_methods ?? [],
                 ] : null,
             ],
             'already_requested' => $request->user()
