@@ -62,17 +62,17 @@ export default function Index({ logs, filters, stats }) {
         <AuthenticatedLayout>
             <Head title="Auditoría de Transacciones" />
 
-            <div className="-mt-16 sm:-mt-20 bg-[linear-gradient(135deg,#1f2937_0%,#111827_100%)] px-4 pb-20 pt-24 sm:px-6 sm:pb-28 sm:pt-32 lg:px-8">
+            <div className="-mt-16 sm:-mt-20 bg-[linear-gradient(135deg,#008b55_0%,#00603b_100%)] px-4 pb-20 pt-24 sm:px-6 sm:pb-28 sm:pt-32 lg:px-8">
                 <div className="mx-auto max-w-[1480px]">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
-                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-indigo-300">
+                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-200">
                                 Consola de Monitoreo
                             </p>
                             <h1 className="mt-3 break-words text-2xl font-bold leading-tight text-white sm:text-4xl">
                                 Auditoría de Transacciones
                             </h1>
-                            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-gray-300">
+                            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-emerald-50">
                                 Monitorea los eventos de estado, cambios en el ciclo de vida y posibles fallas en las solicitudes de fletes.
                             </p>
                         </div>
@@ -112,7 +112,7 @@ export default function Index({ logs, filters, stats }) {
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full sm:w-auto rounded-xl border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    className="w-full sm:w-auto rounded-xl border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                     title="Fecha de inicio"
                                 />
                                 <span className="text-gray-400">a</span>
@@ -120,7 +120,7 @@ export default function Index({ logs, filters, stats }) {
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full sm:w-auto rounded-xl border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    className="w-full sm:w-auto rounded-xl border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                     title="Fecha de fin"
                                 />
                                 <input
@@ -128,9 +128,9 @@ export default function Index({ logs, filters, stats }) {
                                     placeholder="Buscar por ID o Usuario..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full sm:flex-1 rounded-xl border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    className="w-full sm:flex-1 rounded-xl border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                 />
-                                <button type="submit" className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700">
+                                <button type="submit" className="w-full sm:w-auto rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
                                     Filtrar
                                 </button>
                             </form>
@@ -161,7 +161,7 @@ export default function Index({ logs, filters, stats }) {
                                             </td>
                                             <td className="px-4 py-4">
                                                 {log.user ? (
-                                                    <span className="font-medium text-indigo-700">{log.user.name}</span>
+                                                    <span className="font-medium text-emerald-700">{log.user.name}</span>
                                                 ) : (
                                                     <span className="text-gray-400 italic">Sistema</span>
                                                 )}
@@ -185,7 +185,7 @@ export default function Index({ logs, filters, stats }) {
                                             <td className="px-4 py-4 max-w-xs truncate">
                                                 {log.details ? (
                                                     <button 
-                                                        className="text-xs font-bold text-indigo-600 underline"
+                                                        className="text-xs font-bold text-emerald-600 underline hover:text-emerald-800"
                                                         onClick={() => alert(JSON.stringify(log.details, null, 2))}
                                                     >
                                                         Ver JSON
@@ -221,7 +221,7 @@ export default function Index({ logs, filters, stats }) {
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                         className={`rounded-lg px-3 py-1 text-sm font-medium ${
                                             link.active
-                                                ? 'bg-indigo-600 text-white'
+                                                ? 'bg-emerald-600 text-white'
                                                 : link.url
                                                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                     : 'cursor-not-allowed bg-gray-50 text-gray-400'
