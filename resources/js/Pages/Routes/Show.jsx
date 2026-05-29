@@ -691,6 +691,28 @@ export default function Show({ transportRoute, already_requested }) {
                                         value={requestForm.data.estimated_cost}
                                     />
 
+                                    {/* Nueva sección: Métodos de pago (HU14) */}
+                                    {transportRoute.transporter?.payment_methods?.length > 0 && (
+                                        <div className="mt-6 border-t border-emerald-300/60 pt-5">
+                                            <p className={`text-xs font-bold uppercase tracking-[0.18em] ${isSubmitted ? 'text-emerald-800' : 'text-emerald-700'}`}>
+                                                Medios de pago aceptados
+                                            </p>
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {transportRoute.transporter.payment_methods.map((method) => (
+                                                    <span key={method} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100/80 px-3 py-1.5 text-xs font-bold text-emerald-900 border border-emerald-200/50">
+                                                        <svg className="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                        </svg>
+                                                        {method}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <p className="mt-3 text-xs leading-5 text-emerald-800/80 font-medium">
+                                                Acuerda el método de pago exacto directamente con el transportista una vez tu solicitud sea aceptada.
+                                            </p>
+                                        </div>
+                                    )}
+
                                     {isSubmitted ? (
                                         <div className="mt-6 flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
