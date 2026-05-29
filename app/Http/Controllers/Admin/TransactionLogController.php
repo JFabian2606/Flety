@@ -11,7 +11,7 @@ class TransactionLogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = TransactionLog::with(['user', 'transportRequest.route', 'transportRequest.producer.user'])
+        $query = TransactionLog::with(['user', 'transportRequest.route.transporter.user', 'transportRequest.route.vehicle', 'transportRequest.producer.user'])
             ->latest();
 
         if ($request->filled('search')) {

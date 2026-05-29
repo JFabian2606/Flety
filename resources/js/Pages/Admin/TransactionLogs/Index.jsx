@@ -318,6 +318,20 @@ export default function Index({ logs, filters, stats }) {
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+                                            <span className="text-sm text-gray-500">Transportista</span>
+                                            <span className="text-sm font-bold text-indigo-700">
+                                                {selectedLog.transport_request.route?.transporter?.user?.name || 'Desconocido'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 border-b border-gray-50 pb-2">
+                                            <span className="text-sm text-gray-500">Vehículo Asignado</span>
+                                            <span className="text-sm font-bold text-gray-900">
+                                                {selectedLog.transport_request.route?.vehicle ? (
+                                                    `${selectedLog.transport_request.route.vehicle.brand} ${selectedLog.transport_request.route.vehicle.model} (Placa: ${selectedLog.transport_request.route.vehicle.license_plate})`
+                                                ) : 'Sin vehículo'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-gray-50 pb-2">
                                             <span className="text-sm text-gray-500">Carga</span>
                                             <span className="text-sm font-bold text-gray-900">
                                                 {selectedLog.transport_request.cargo_weight_kg} kg de {selectedLog.transport_request.product_type}
