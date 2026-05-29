@@ -249,67 +249,37 @@ function TransporterOperations({
         <AuthenticatedLayout>
             <Head title="Panel Transportista" />
 
-            <div className="min-h-screen bg-[#f4f7f2]">
-                <div className="mx-auto max-w-[1560px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
-                    {flash.success ? (
-                        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
-                            {flash.success}
-                        </section>
-                    ) : null}
-                    {flash.error ? (
-                        <section className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
-                            {flash.error}
-                        </section>
-                    ) : null}
+            <div className="w-full min-h-screen bg-slate-50">
+                {/* Edge-to-Edge Hero */}
+                <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 pb-12 pt-28 sm:pt-32 sm:px-6 lg:px-8 text-white -mt-20 sm:-mt-24">
+                    <div className="mx-auto max-w-[1560px]">
+                        {flash.success ? (
+                            <section className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+                                {flash.success}
+                            </section>
+                        ) : null}
+                        {flash.error ? (
+                            <section className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
+                                {flash.error}
+                            </section>
+                        ) : null}
 
-                    <section className="animate-panel-rise overflow-hidden rounded-[1.35rem] border border-[#0d4f2a]/20 bg-[radial-gradient(circle_at_35%_0%,rgba(46,126,59,0.55),transparent_34%),linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] p-4 text-white shadow-[0_28px_70px_-48px_rgba(4,59,31,0.85)] sm:p-5 lg:p-7">
-                        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(430px,0.92fr)] xl:items-stretch">
-                            <div className="flex min-w-0 flex-col justify-between gap-7 p-2 sm:p-4">
-                                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-                                    <div className="min-w-0">
-                                        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#bfe6b5]">
-                                            <span className="grid h-6 w-6 place-items-center rounded-lg border border-white/15 bg-white/10 text-sm">
-                                                +
-                                            </span>
-                                            Panel transportista
-                                        </p>
-                                        <h1 className="mt-5 max-w-2xl text-3xl font-bold leading-tight tracking-[-0.03em] sm:text-4xl lg:text-[2.7rem]">
-                                            Gestiona tus rutas y solicitudes en un solo lugar
-                                        </h1>
-                                        <p className="mt-5 max-w-xl text-sm leading-6 text-[#d9ead3] sm:text-base">
-                                            Consulta rutas activas, solicitudes de carga
-                                            y servicios confirmados. Todo lo que
-                                            necesitas, en Flety.
-                                        </p>
-                                    </div>
-
-                                    <div className="rounded-2xl border border-white/18 bg-white/8 px-4 py-4 shadow-[0_24px_50px_-42px_rgba(0,0,0,0.55)] backdrop-blur">
-                                        <div className="flex items-center gap-3">
-                                            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#8fd56d] bg-[#0d6b36] text-sm font-bold text-white">
-                                                {userInitials || 'TF'}
-                                            </span>
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold">
-                                                    {user.name}
-                                                </p>
-                                                <p className="mt-0.5 text-xs text-white/70">
-                                                    Transportista
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span
-                                            className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                                isVerified
-                                                    ? 'bg-emerald-500/18 text-[#c8f2bd]'
-                                                    : 'bg-white/12 text-white/78'
-                                            }`}
-                                        >
-                                            {isVerified ? 'Verificado' : 'En revision'}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2 sm:px-4 pt-4">
+                            <div className="min-w-0 max-w-3xl">
+                                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#bfe6b5] mb-4">
+                                    <span className="grid h-6 w-6 place-items-center rounded-lg border border-white/15 bg-white/10 text-sm">
+                                        +
+                                    </span>
+                                    Panel transportista
+                                </p>
+                                <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.7rem]">
+                                    Gestiona tus rutas y solicitudes en un solo lugar
+                                </h1>
+                                <p className="mt-4 text-lg text-[#d9ead3] max-w-2xl leading-relaxed">
+                                    Consulta rutas activas, solicitudes de carga y servicios confirmados. Todo lo que necesitas, en Flety.
+                                </p>
+                                
+                                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                                     {entryRoute ? (
                                         <Link
                                             href={entryRoute}
@@ -320,107 +290,85 @@ function TransporterOperations({
                                     ) : null}
                                     <Link
                                         href={route('transporter.vehicles.create')}
-                                        className="interactive-lift inline-flex justify-center rounded-xl border border-white/28 bg-white/8 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/14"
+                                        className="interactive-lift inline-flex justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/20 backdrop-blur-sm"
                                     >
                                         Registrar vehiculo
                                     </Link>
                                 </div>
-
-                                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                    {primaryMetrics.map((metric, index) => (
-                                        <article
-                                            key={metric.title}
-                                            className="min-w-0 rounded-2xl border border-white/18 bg-white/7 p-4 shadow-[0_24px_48px_-44px_rgba(0,0,0,0.65)]"
-                                        >
-                                            <div
-                                                className={`grid h-12 w-12 place-items-center rounded-full border border-white/15 ${metricIconStyles[index % metricIconStyles.length]}`}
-                                            >
-                                                <span className="text-lg font-bold">
-                                                    {metric.value}
-                                                </span>
-                                            </div>
-                                            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#bfe6b5]">
-                                                {metric.eyebrow}
-                                            </p>
-                                            <p className="mt-2 text-sm leading-5 text-white">
-                                                {metric.title}
-                                            </p>
-                                        </article>
-                                    ))}
-                                </div>
                             </div>
 
-                            <aside className="min-w-0 rounded-[1.25rem] border border-white/18 bg-white p-4 text-[#203029] shadow-[0_30px_70px_-48px_rgba(0,0,0,0.65)] sm:p-5">
-                                <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#42534a]">
-                                            {data.spotlight.title}
-                                        </p>
-                                        <h2 className="mt-4 break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-[#163b29]">
-                                            {data.spotlight.route}
-                                            <span className="mx-2 text-[#2f8b45]">
-                                                {'->'}
-                                            </span>
-                                            {data.spotlight.routeTo}
-                                        </h2>
-                                        <p className="mt-3 text-sm font-medium text-[#66746d]">
-                                            {data.spotlight.dateLabel}
-                                        </p>
-                                    </div>
-                                    <span className="inline-flex w-fit rounded-xl bg-[#edf7e8] px-4 py-2 text-sm font-semibold text-[#427c46]">
-                                        {data.spotlight.statusLabel}
-                                    </span>
-                                </div>
-
-                                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                                    <div className="rounded-2xl border border-[#e5ebdf] bg-white px-4 py-3 shadow-[0_16px_34px_-32px_rgba(31,74,49,0.4)]">
-                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b746d]">
-                                            Capacidad
-                                        </p>
-                                        <p className="mt-2 font-bold text-[#203029]">
-                                            {data.spotlight.infoValue}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-2xl border border-[#e5ebdf] bg-white px-4 py-3 shadow-[0_16px_34px_-32px_rgba(31,74,49,0.4)]">
-                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b746d]">
-                                            Vehiculo
-                                        </p>
-                                        <p className="mt-2 break-words font-bold text-[#203029]">
-                                            {data.spotlight.vehicleLabel}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-2xl border border-[#e5ebdf] bg-white px-4 py-3 shadow-[0_16px_34px_-32px_rgba(31,74,49,0.4)]">
-                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b746d]">
-                                            Solicitudes
-                                        </p>
-                                        <p className="mt-2 font-bold text-[#203029]">
-                                            {data.spotlight.requestsLabel}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 overflow-hidden rounded-2xl border border-[#dce8d8] bg-[#f4f8ef] p-2">
-                                    {spotlightMapRoute ? (
-                                        <RouteMap
-                                            routes={[spotlightMapRoute]}
-                                            height="clamp(230px, 32vh, 320px)"
-                                        />
-                                    ) : (
-                                        <div className="flex min-h-[250px] items-center justify-center rounded-xl border border-dashed border-[#cfe1cb] bg-[#f8fbf6] px-6 text-center text-sm text-[#647067]">
-                                            Publica una ruta con puntos de mapa para ver el trayecto aqui.
+                            <div className="flex flex-col items-end gap-3">
+                                <div className="flex flex-wrap items-center gap-3 bg-black/10 p-3 rounded-2xl backdrop-blur-sm border border-white/10">
+                                    <div className="flex items-center gap-3 px-2">
+                                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[#8fd56d] bg-[#0d6b36] text-sm font-bold text-white">
+                                            {userInitials || 'TF'}
+                                        </span>
+                                        <div className="min-w-0 text-left">
+                                            <p className="truncate text-sm font-semibold text-white">
+                                                {user.name}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-white/70">
+                                                Transportista
+                                            </p>
                                         </div>
-                                    )}
+                                    </div>
+                                    <Link
+                                        href={route('transporter.documents.index')}
+                                        className={`interactive-lift inline-flex rounded-xl px-4 py-2 text-sm font-medium backdrop-blur-sm border transition ${
+                                            isVerified
+                                                ? 'bg-emerald-500/20 border-emerald-400/30 text-[#c8f2bd] hover:bg-emerald-500/30'
+                                                : 'bg-white/10 border-white/20 text-white/90 hover:bg-white/20'
+                                        }`}
+                                    >
+                                        {isVerified ? '✓ Verificado' : '⚠ En revisión (Validar documentos)'}
+                                    </Link>
                                 </div>
-
-                                <p className="mt-4 rounded-xl bg-[#edf7e8] px-4 py-3 text-sm font-semibold text-[#3f6f4b]">
-                                    La carga se define cuando el productor envia la solicitud.
-                                </p>
-                            </aside>
+                            </div>
                         </div>
-                    </section>
+                    </div>
+                </div>
 
-                    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                        <article className="animate-panel-rise rounded-2xl border border-[#dfe8dc] bg-white p-5 shadow-[0_22px_50px_-42px_rgba(31,74,49,0.4)] sm:p-6">
+                <div className="bg-slate-50">
+                    <div className="mx-auto max-w-[1560px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                        {/* Layout for Metrics, Lists and Spotlight */}
+                        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] items-start">
+                            {/* LEFT COLUMN: Metrics & Lists */}
+                            <div className="min-w-0 space-y-6">
+                                
+                                {/* Metrics Grid (2x2) */}
+                                <section className="animate-panel-rise overflow-hidden">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        {primaryMetrics.map((metric, index) => (
+                                            <article
+                                                key={metric.title}
+                                                className="min-w-0 rounded-2xl bg-[#084826] p-5 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.65)] text-white relative overflow-hidden"
+                                            >
+                                                <div className="absolute inset-0 bg-gradient-to-br from-[#106c3a]/50 to-transparent"></div>
+                                                <div className="relative z-10 flex flex-col h-full">
+                                                    <div className="flex items-center justify-between">
+                                                        <div
+                                                            className="grid h-12 w-12 place-items-center rounded-full bg-[#05321a] border border-[#1b7f48]/40 text-[#c8f2bd]"
+                                                        >
+                                                            <span className="text-lg font-bold">
+                                                                {metric.value}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9ce388]">
+                                                            {metric.eyebrow}
+                                                        </p>
+                                                    </div>
+                                                    <p className="mt-4 text-sm leading-5 text-[#e6f4e1] font-medium">
+                                                        {metric.title}
+                                                    </p>
+                                                </div>
+                                            </article>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                {/* Lists */}
+                                <div className="min-w-0 grid gap-5 grid-cols-1">
+                                    <article className="animate-panel-rise rounded-2xl border border-[#dfe8dc] bg-white p-5 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-6">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#42534a]">
@@ -553,9 +501,80 @@ function TransporterOperations({
                                     </Link>
                                 </div>
                             ) : null}
-                        </article>
-                    </section>
+                                </article>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: Spotlight Map */}
+                        <aside className="min-w-0 xl:sticky xl:top-24 rounded-[1.25rem] border border-[#dfe8dc] bg-white p-5 text-[#203029] shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-6">
+                            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#42534a]">
+                                        {data.spotlight.title}
+                                    </p>
+                                    <h2 className="mt-4 break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-[#163b29]">
+                                        {data.spotlight.route}
+                                        <span className="mx-2 text-[#2f8b45]">
+                                            {'->'}
+                                        </span>
+                                        {data.spotlight.routeTo}
+                                    </h2>
+                                    <p className="mt-3 text-sm font-medium text-[#66746d]">
+                                        {data.spotlight.dateLabel}
+                                    </p>
+                                </div>
+                                <span className="inline-flex w-fit rounded-xl bg-[#edf7e8] px-4 py-2 text-sm font-semibold text-[#427c46]">
+                                    {data.spotlight.statusLabel}
+                                </span>
+                            </div>
+
+                            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-[#e5ebdf] bg-white px-4 py-3 shadow-[0_16px_34px_-32px_rgba(31,74,49,0.4)]">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b746d]">
+                                        Capacidad
+                                    </p>
+                                    <p className="mt-2 font-bold text-[#203029]">
+                                        {data.spotlight.infoValue}
+                                    </p>
+                                </div>
+                                <div className="rounded-2xl border border-[#e5ebdf] bg-white px-4 py-3 shadow-[0_16px_34px_-32px_rgba(31,74,49,0.4)]">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b746d]">
+                                        Vehiculo
+                                    </p>
+                                    <p className="mt-2 break-words font-bold text-[#203029]">
+                                        {data.spotlight.vehicleLabel}
+                                    </p>
+                                </div>
+                                <div className="rounded-2xl border border-[#e5ebdf] bg-white px-4 py-3 shadow-[0_16px_34px_-32px_rgba(31,74,49,0.4)]">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b746d]">
+                                        Solicitudes
+                                    </p>
+                                    <p className="mt-2 font-bold text-[#203029]">
+                                        {data.spotlight.requestsLabel}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 overflow-hidden rounded-2xl border border-[#dce8d8] bg-[#f4f8ef] p-2">
+                                {spotlightMapRoute ? (
+                                    <RouteMap
+                                        routes={[spotlightMapRoute]}
+                                        height="clamp(230px, 32vh, 320px)"
+                                    />
+                                ) : (
+                                    <div className="flex min-h-[250px] items-center justify-center rounded-xl border border-dashed border-[#cfe1cb] bg-[#f8fbf6] px-6 text-center text-sm text-[#647067]">
+                                        Publica una ruta con puntos de mapa para ver el trayecto aqui.
+                                    </div>
+                                )}
+                            </div>
+
+                            <p className="mt-4 rounded-xl bg-[#edf7e8] px-4 py-3 text-sm font-semibold text-[#3f6f4b]">
+                                La carga se define cuando el productor envia la solicitud.
+                            </p>
+                        </aside>
+                    </div>
                 </div>
+            </div>
             </div>
         </AuthenticatedLayout>
     );
@@ -602,59 +621,48 @@ export default function Dashboard({ dashboardRole, entryRoute, dashboardData }) 
     }
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex flex-col gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#427c46]">
-                        Centro de operaciones
-                    </p>
-                    <h2 className="text-2xl font-semibold leading-tight text-slate-900">
-                        {user.role?.name ? `Panel ${user.role.name}` : 'Panel Flety'}
-                    </h2>
-                </div>
-            }
-        >
+        <AuthenticatedLayout>
             <Head title="Panel" />
 
-            <div className="bg-[linear-gradient(180deg,#eef7ec_0%,#f7faf4_44%,#fbfcf8_100%)]">
-                <div className="space-y-0">
-                    {flash.success ? (
-                        <section className="rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
-                            {flash.success}
-                        </section>
-                    ) : null}
-                    {flash.error ? (
-                        <section className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
-                            {flash.error}
-                        </section>
-                    ) : null}
+            <div className="w-full min-h-screen bg-slate-50">
+                {/* Edge-to-Edge Hero */}
+                <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 pb-12 pt-28 sm:pt-32 sm:px-6 lg:px-8 text-white -mt-20 sm:-mt-24">
+                    <div className="mx-auto max-w-[1560px]">
+                        {flash.success ? (
+                            <section className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+                                {flash.success}
+                            </section>
+                        ) : null}
+                        {flash.error ? (
+                            <section className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
+                                {flash.error}
+                            </section>
+                        ) : null}
 
-                    <section className="animate-panel-rise overflow-hidden bg-[#f7faf4]">
-                        <div className="border-b border-[#e5ebdf] bg-white/95 px-4 py-4 sm:px-6 lg:px-8">
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                                <div className="flex items-center gap-4">
-                                    <img
-                                        src="/assets/landing/logo_flety.png"
-                                        alt="Flety"
-                                        className="h-12 w-auto"
-                                    />
-                                    <div>
-                                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#427c46]">
-                                            {data.hero.badge}
-                                        </p>
-                                        <p className="mt-1 text-sm font-medium text-[#52615a]">
-                                            Informacion funcional cargada desde la base de datos
-                                        </p>
-                                    </div>
-                                </div>
+                        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2 sm:px-4 pt-4">
+                            <div className="min-w-0 max-w-3xl">
+                                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#bfe6b5] mb-4">
+                                    <span className="grid h-6 w-6 place-items-center rounded-lg border border-white/15 bg-white/10 text-sm">
+                                        +
+                                    </span>
+                                    {data.hero.badge}
+                                </p>
+                                <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.7rem]">
+                                    {user.role?.name ? `Panel ${user.role.name}` : 'Panel Flety'}
+                                </h1>
+                                <p className="mt-4 text-lg text-[#d9ead3] max-w-2xl leading-relaxed">
+                                    Informacion funcional cargada desde la base de datos
+                                </p>
+                            </div>
 
+                            <div className="flex flex-wrap items-center gap-3 bg-black/10 p-3 rounded-2xl backdrop-blur-sm border border-white/10">
                                 <div className="flex flex-wrap items-center gap-2">
                                     {data.pills.slice(0, 3).map((item) => (
                                         <div
                                             key={item.label}
-                                            className="rounded-2xl border border-[#e5ebdf] bg-[#f8faf5] px-4 py-2 text-sm font-medium text-[#31473c]"
+                                            className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm"
                                         >
-                                            <span className="text-[#7b887f]">
+                                            <span className="text-white/70">
                                                 {item.label}:{' '}
                                             </span>
                                             {item.value}
@@ -662,15 +670,17 @@ export default function Dashboard({ dashboardRole, entryRoute, dashboardData }) 
                                     ))}
                                     <button
                                         type="button"
-                                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#e1e8dc] bg-white text-[#2f6d3e] transition hover:bg-[#f4f8ef]"
+                                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20 backdrop-blur-sm"
                                     >
                                         <SearchIcon />
                                     </button>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div className="bg-[linear-gradient(135deg,#e8f4e5_0%,#f2f8ef_48%,#f8fbf6_100%)]">
+                <div className="bg-slate-50">
                             <div className="space-y-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
                                 <div className="grid items-start gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
                                     <div className="space-y-4 xl:sticky xl:top-24">
@@ -787,9 +797,7 @@ export default function Dashboard({ dashboardRole, entryRoute, dashboardData }) 
                                 </section>
                             </div>
                         </div>
-                    </section>
-                </div>
-            </div>
+                    </div>
         </AuthenticatedLayout>
     );
 }

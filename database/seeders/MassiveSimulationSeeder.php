@@ -103,12 +103,18 @@ class MassiveSimulationSeeder extends Seeder
 
             $transporterStatus = $faker->randomElement(['pending', 'approved', 'approved', 'approved', 'rejected']);
             
+            $methods = collect(['Efectivo', 'Nequi', 'Daviplata', 'Bancolombia'])
+                ->random(rand(1, 3))
+                ->values()
+                ->toArray();
+
             $transporter = Transporter::create([
                 'user_id' => $user->id,
                 'identity_document' => $faker->unique()->randomNumber(9, true),
                 'driver_license' => strtoupper($faker->bothify('???###')),
                 'validation_status' => $transporterStatus,
                 'rating_average' => $faker->randomFloat(2, 3, 5),
+                'payment_methods' => $methods,
             ]);
 
             $transporters[] = $transporter;

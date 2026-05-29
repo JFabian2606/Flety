@@ -57,7 +57,7 @@ export default function AdminDashboard({ dashboardRole, dashboardData }) {
 
             <div className="min-h-screen bg-slate-50 pb-12">
                 {/* Hero Section (Command Center Style) */}
-                <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 py-10 sm:px-6 lg:px-8 text-white">
+                <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 pb-10 pt-28 sm:pt-32 sm:px-6 lg:px-8 text-white -mt-20 sm:-mt-24">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
