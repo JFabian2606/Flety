@@ -3310,9 +3310,8 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
     };
 
     return (
-        <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
-            <div className="min-w-0 space-y-5">
-                <section className={cardClassName('overflow-hidden')}>
+        <div className="min-w-0 space-y-6">
+            <section className={cardClassName('overflow-hidden')}>
                     <SectionTitle
                         eyebrow="Busqueda"
                         title="Buscar rutas cercanas"
@@ -3445,7 +3444,9 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
                     </p>
                 </section>
 
-                <section className={cardClassName()}>
+            <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(400px,0.95fr)] xl:grid-cols-[minmax(0,1.05fr)_minmax(450px,0.95fr)] items-start">
+                <div className="min-w-0 space-y-5">
+                    <section className={cardClassName()}>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <SectionTitle
                             eyebrow="Rutas disponibles"
@@ -3633,11 +3634,11 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
                         Los tiempos y costos son estimados. El valor final sera
                         confirmado por el transportista.
                     </p>
-                </section>
-            </div>
+                    </section>
+                </div>
 
-            <aside className="min-w-0 xl:sticky xl:top-24 xl:self-start">
-                <section className={cardClassName('overflow-hidden')}>
+                <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+                    <section className={cardClassName('overflow-hidden')}>
                     {selectedRoute ? (
                         <>
                             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -3664,8 +3665,8 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
                                 <StatusBadge status={selectedRoute.status} />
                             </div>
 
-                            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                                <div className="rounded-xl bg-slate-50 px-4 py-3">
+                            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                                <div className="rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
                                     <p className="text-xs text-slate-500">
                                         Tiempo aprox.
                                     </p>
@@ -3772,7 +3773,8 @@ function ProducerRoutesMarketplaceView({ availableRoutes, routeFilters = {} }) {
                     )}
                 </section>
             </aside>
-        </section>
+            </div>
+        </div>
     );
 }
 
@@ -3791,8 +3793,29 @@ export default function RoutesIndex({
         <AuthenticatedLayout>
             <Head title="Rutas y solicitudes" />
 
-            <div className="w-full overflow-x-hidden bg-[linear-gradient(180deg,#eef7ec_0%,#f7faf4_100%)] py-5 sm:py-7">
-                <div className="mx-auto flex min-w-0 max-w-[1540px] flex-col gap-5 px-3 sm:px-5 lg:px-8">
+            {/* Command Center Hero */}
+            <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 pb-10 pt-28 sm:pt-32 sm:px-6 lg:px-8 text-white -mt-20 sm:-mt-24">
+                <div className="max-w-[1540px] mx-auto">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#c8f2bd] ring-1 ring-inset ring-white/20 mb-4">
+                                {role === 'productor' ? 'Mercado de rutas' : 'Tus rutas'}
+                            </span>
+                            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                                {role === 'productor' ? 'Rutas Disponibles' : 'Gestionar Rutas'}
+                            </h1>
+                            <p className="mt-2 text-lg text-[#d9ead3] max-w-2xl">
+                                {role === 'productor' 
+                                    ? 'Busca transportistas con capacidad disponible para llevar tus productos al destino.'
+                                    : 'Publica nuevas rutas, revisa solicitudes de carga y administra tus viajes en curso.'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="w-full min-h-screen overflow-x-hidden bg-slate-50 py-8">
+                <div className="mx-auto flex min-w-0 max-w-[1540px] flex-col gap-8 px-3 sm:px-5 lg:px-8">
                     <FlashMessages success={flash.success} error={flash.error} />
 
                     {role === 'transportista' ? (

@@ -417,45 +417,58 @@ export default function CreateVehicle({ vehicles = [] }) {
     const { flash } = usePage().props;
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#427c46]">
-                            Vehiculos
-                        </p>
-                        <h2 className="mt-2 text-2xl font-semibold leading-tight text-slate-900">
-                            Registro y revision de flota
-                        </h2>
-                    </div>
-                    <Link
-                        href={route('transporter.routes.index')}
-                        className="interactive-lift inline-flex w-full justify-center rounded-xl border border-slate-300 bg-white/70 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white sm:w-auto"
-                    >
-                        Volver a rutas
-                    </Link>
-                </div>
-            }
-        >
+        <AuthenticatedLayout>
             <Head title="Registrar vehiculo" />
 
-            <div className="bg-[linear-gradient(180deg,#eef7ec_0%,#f7faf4_100%)] py-5 sm:py-7">
-                <div className="mx-auto flex max-w-[1540px] flex-col gap-5 px-3 sm:px-5 lg:px-8">
-                    {flash.success ? (
-                        <section className="rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
-                            {flash.success}
-                        </section>
-                    ) : null}
-                    {flash.error ? (
-                        <section className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
-                            {flash.error}
-                        </section>
-                    ) : null}
+            <div className="w-full min-h-screen bg-slate-50">
+                {/* Edge-to-Edge Hero */}
+                <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 pb-12 pt-28 sm:pt-32 sm:px-6 lg:px-8 text-white -mt-20 sm:-mt-24">
+                    <div className="mx-auto max-w-[1560px]">
+                        {flash.success ? (
+                            <section className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+                                {flash.success}
+                            </section>
+                        ) : null}
+                        {flash.error ? (
+                            <section className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
+                                {flash.error}
+                            </section>
+                        ) : null}
+                        
+                        <div className="mt-4 flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2 sm:px-4">
+                            <div className="min-w-0 max-w-3xl">
+                                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#bfe6b5] mb-4">
+                                    <span className="grid h-6 w-6 place-items-center rounded-lg border border-white/15 bg-white/10 text-sm">
+                                        +
+                                    </span>
+                                    Vehiculos
+                                </p>
+                                <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.7rem]">
+                                    Registro y revision de flota
+                                </h1>
+                                <p className="mt-4 text-lg text-[#d9ead3] max-w-2xl leading-relaxed">
+                                    Agrega vehiculos a tu flota y manten actualizada la documentacion. El administrador validara los datos antes de permitirte publicar rutas con ellos.
+                                </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-3">
+                                <Link
+                                    href={route('transporter.routes.index')}
+                                    className="interactive-lift inline-flex justify-center rounded-xl border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/20 backdrop-blur-sm"
+                                >
+                                    Volver a rutas
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-                        <VehicleForm />
-                        <VehicleList vehicles={vehicles} />
-                    </section>
+                <div className="bg-slate-50">
+                    <div className="mx-auto max-w-[1560px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr] items-start">
+                            <VehicleForm />
+                            <VehicleList vehicles={vehicles} />
+                        </section>
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>

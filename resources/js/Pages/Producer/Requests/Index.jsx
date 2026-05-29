@@ -177,52 +177,68 @@ export default function Index({ requests }) {
         <AuthenticatedLayout>
             <Head title="Mis Solicitudes" />
 
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
-                    <SectionTitle
-                        eyebrow="Tus ofertas"
-                        title="Solicitudes de transporte"
-                        description="Haz seguimiento a las ofertas de carga que has enviado a los transportistas."
-                    />
-                    
-                    <div className="flex w-max gap-2 overflow-x-auto pb-2 sm:pb-0 pr-1">
-                        {filterOptions.map((option) => {
-                            const count = requests.filter((req) => option.key === 'all' || req.status === option.key).length;
-                            const isActive = filterStatus === option.key;
-
-                            return (
-                                <button
-                                    key={option.key}
-                                    type="button"
-                                    onClick={() => setFilterStatus(option.key)}
-                                    className={`whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-semibold transition sm:text-sm ${
-                                        isActive
-                                            ? 'bg-[#427c46] text-white shadow-[0_12px_28px_-22px_rgba(66,124,70,0.75)]'
-                                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700'
-                                    }`}
-                                >
-                                    {option.label}
-                                    <span
-                                        className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
-                                            isActive
-                                                ? 'bg-white/20 text-white'
-                                                : 'bg-slate-100 text-slate-500'
-                                        }`}
-                                    >
-                                        {count}
-                                    </span>
-                                </button>
-                            );
-                        })}
+            {/* Command Center Hero */}
+            <div className="bg-[linear-gradient(135deg,#06451f_0%,#083f24_48%,#02552c_100%)] px-4 pb-10 pt-28 sm:pt-32 sm:px-6 lg:px-8 text-white -mt-20 sm:-mt-24">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#c8f2bd] ring-1 ring-inset ring-white/20 mb-4">
+                                Tus Ofertas
+                            </span>
+                            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                                Rutas Activas
+                            </h1>
+                            <p className="mt-2 text-lg text-[#d9ead3] max-w-2xl">
+                                Haz seguimiento a las ofertas de carga que has enviado a los transportistas y contacta con los que aceptaron tu carga.
+                            </p>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div className="grid gap-6">
-                    {filteredRequests.length > 0 ? (
-                        filteredRequests.map(renderRequestCard)
-                    ) : (
-                        <EmptyState message="No hay solicitudes para mostrar con este filtro." />
-                    )}
+            <div className="min-h-screen bg-slate-50 py-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-8">
+                        <div className="flex w-max gap-2 overflow-x-auto pb-2 sm:pb-0 pr-1">
+                            {filterOptions.map((option) => {
+                                const count = requests.filter((req) => option.key === 'all' || req.status === option.key).length;
+                                const isActive = filterStatus === option.key;
+
+                                return (
+                                    <button
+                                        key={option.key}
+                                        type="button"
+                                        onClick={() => setFilterStatus(option.key)}
+                                        className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-semibold transition sm:text-sm flex items-center gap-2 ${
+                                            isActive
+                                                ? 'bg-emerald-700 text-white shadow-sm'
+                                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700'
+                                        }`}
+                                    >
+                                        {option.label}
+                                        <span
+                                            className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                                                isActive
+                                                    ? 'bg-emerald-500 text-white'
+                                                    : 'bg-slate-100 text-slate-500'
+                                            }`}
+                                        >
+                                            {count}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="grid gap-6">
+                        {filteredRequests.length > 0 ? (
+                            filteredRequests.map(renderRequestCard)
+                        ) : (
+                            <EmptyState message="No hay solicitudes para mostrar con este filtro." />
+                        )}
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>
