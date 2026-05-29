@@ -19,6 +19,8 @@ class TransportRequest extends Model
                 'user_id' => auth()->id(),
                 'action' => 'created',
                 'new_status' => $request->status,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
             ]);
         });
 
@@ -30,6 +32,8 @@ class TransportRequest extends Model
                     'action' => 'status_changed',
                     'old_status' => $request->getOriginal('status'),
                     'new_status' => $request->status,
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
                 ]);
             }
         });

@@ -44,14 +44,16 @@ function ActionBadge({ action }) {
     );
 }
 
-export default function Index({ logs, filters }) {
+export default function Index({ logs, filters, stats }) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
 
     const handleSearch = (e) => {
         e.preventDefault();
         router.get(
             route('admin.transaction-logs.index'),
-            { search: searchQuery },
+            { search: searchQuery, start_date: startDate, end_date: endDate },
             { preserveState: true, preserveScroll: true }
         );
     };
@@ -80,21 +82,56 @@ export default function Index({ logs, filters }) {
 
             <div className="-mt-12 min-h-screen px-3 pb-12 sm:px-5 lg:px-6">
                 <div className="mx-auto max-w-[1480px] space-y-4">
+                    {/* STATS CARDS */}
+                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                            <p className="text-sm font-medium text-gray-500">Transacciones Hoy</p>
+                            <p className="mt-2 text-3xl font-bold text-gray-900">{stats?.total_today || 0}</p>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+                            <p className="text-sm font-medium text-emerald-600">Aceptadas Hoy</p>
+                            <p className="mt-2 text-3xl font-bold text-emerald-900">{stats?.accepted_today || 0}</p>
+                        </div>
+                        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
+                            <p className="text-sm font-medium text-rose-600">Rechazadas Hoy</p>
+                            <p className="mt-2 text-3xl font-bold text-rose-900">{stats?.rejected_today || 0}</p>
+                        </div>
+                        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+                            <p className="text-sm font-medium text-red-600">Errores / Fallas Hoy</p>
+                            <p className="mt-2 text-3xl font-bold text-red-900">{stats?.failed_today || 0}</p>
+                        </div>
+                    </div>
+
                     <section className="animate-panel-rise rounded-2xl border border-gray-200 bg-white p-5 shadow-lg sm:p-8">
-                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                             <h2 className="text-xl font-bold text-gray-800">
                                 Historial de Eventos Técnicos
                             </h2>
-                            <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center gap-2">
+                            <form onSubmit={handleSearch} className="flex w-full max-w-3xl flex-col sm:flex-row items-center gap-3">
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full sm:w-auto rounded-xl border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    title="Fecha de inicio"
+                                />
+                                <span className="text-gray-400">a</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full sm:w-auto rounded-xl border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    title="Fecha de fin"
+                                />
                                 <input
                                     type="text"
                                     placeholder="Buscar por ID o Usuario..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    className="w-full sm:flex-1 rounded-xl border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 />
-                                <button type="submit" className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
-                                    Buscar
+                                <button type="submit" className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700">
+                                    Filtrar
                                 </button>
                             </form>
                         </div>
@@ -107,8 +144,8 @@ export default function Index({ logs, filters }) {
                                         <th className="px-4 py-3 font-semibold">Fecha y Hora</th>
                                         <th className="px-4 py-3 font-semibold">Acción</th>
                                         <th className="px-4 py-3 font-semibold">Usuario Actor</th>
-                                        <th className="px-4 py-3 font-semibold">Estado Anterior</th>
                                         <th className="px-4 py-3 font-semibold">Estado Nuevo</th>
+                                        <th className="px-4 py-3 font-semibold">Rastreo (IP / Disp.)</th>
                                         <th className="px-4 py-3 font-semibold">Detalles Técnicos</th>
                                     </tr>
                                 </thead>
@@ -130,10 +167,20 @@ export default function Index({ logs, filters }) {
                                                 )}
                                             </td>
                                             <td className="px-4 py-4">
-                                                <StatusBadge status={log.old_status} />
+                                                <div className="flex flex-col gap-1">
+                                                    <StatusBadge status={log.new_status} />
+                                                    {log.old_status && (
+                                                        <span className="text-[10px] text-gray-400">Antes: {log.old_status}</span>
+                                                    )}
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-4">
-                                                <StatusBadge status={log.new_status} />
+                                            <td className="px-4 py-4 max-w-xs">
+                                                <div className="flex flex-col">
+                                                    <span className="font-mono text-xs text-gray-600">{log.ip_address || 'No IP'}</span>
+                                                    <span className="text-[10px] text-gray-400 truncate" title={log.user_agent}>
+                                                        {log.user_agent ? log.user_agent.split(' ').slice(0, 3).join(' ') + '...' : '-'}
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td className="px-4 py-4 max-w-xs truncate">
                                                 {log.details ? (

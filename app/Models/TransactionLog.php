@@ -15,6 +15,8 @@ class TransactionLog extends Model
         'action',
         'old_status',
         'new_status',
+        'ip_address',
+        'user_agent',
         'details',
     ];
 
