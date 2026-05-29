@@ -18,9 +18,15 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        // Cargamos al usuario con su perfil de transportista (si lo tiene)
+        $user = $request->user()->load('transporterProfile');
+
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            
+            // --- NUEVO: Le enviamos la info del transportista a React ---
+            'transporter' => $user->transporterProfile,
         ]);
     }
 
@@ -29,6 +35,7 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        // 1. Guarda la información básica del usuario (Nombre, Correo)
         $request->user()->fill($request->validated());
 
         if ($request->user()->isDirty('email')) {
@@ -36,6 +43,22 @@ class ProfileController extends Controller
         }
 
         $request->user()->save();
+
+        // --- NUEVO: Guarda los métodos de pago del transportista ---
+        // Verificamos si la petición trae métodos de pago y si el usuario es transportista
+        if ($request->has('payment_methods') && $request->user()->transporterProfile) {
+            
+            // Validamos que la información sea un arreglo seguro
+            $request->validate([
+                'payment_methods' => ['nullable', 'array']
+            ]);
+
+            // Actualizamos la tabla transporters
+            $request->user()->transporterProfile->update([
+                'payment_methods' => $request->input('payment_methods')
+            ]);
+        }
+        // -----------------------------------------------------------
 
         return Redirect::route('profile.edit');
     }

@@ -130,9 +130,9 @@ class TransportRouteController extends Controller
                 ->where('min_cargo_weight_kg', '<=', $routeFilters['cargo_weight_kg']))
             ->whereColumn('available_capacity_kg', '>=', 'min_cargo_weight_kg')
             ->orderBy('departure_at')
-            ->limit(50)
-            ->get()
-            ->map(function (TransportRoute $route) use ($costEstimator, $routeFilters) {
+            ->paginate(5)
+            ->withQueryString()
+            ->through(function (TransportRoute $route) use ($costEstimator, $routeFilters) {
                 $distanceKm = $route->distance_km !== null ? (float) $route->distance_km : null;
 
                 return [
@@ -161,6 +161,7 @@ class TransportRouteController extends Controller
                     'transporter' => $route->transporter?->user ? [
                         'id' => $route->transporter->id,
                         'name' => $route->transporter->user->name,
+                        'payment_methods' => $route->transporter->payment_methods ?? [],
                     ] : null,
                 ];
             });
@@ -286,6 +287,7 @@ class TransportRouteController extends Controller
                 'transporter' => $transportRoute->transporter?->user ? [
                     'id' => $transportRoute->transporter->id,
                     'name' => $transportRoute->transporter->user->name,
+                    'payment_methods' => $transportRoute->transporter->payment_methods ?? [],
                 ] : null,
             ],
             'already_requested' => $request->user()

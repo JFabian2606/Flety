@@ -4,10 +4,12 @@ use App\Http\Controllers\AdminRouteController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminStatsController;
 use App\Http\Controllers\AdminVehicleController;
+use App\Http\Controllers\Admin\TransactionLogController;
 use App\Http\Controllers\AuthLoadingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleRedirectController;
+use App\Http\Controllers\TransporterDocumentController;
 use App\Http\Controllers\TransporterVerificationController;
 use App\Http\Controllers\TransportRequestController;
 use App\Http\Controllers\TransportRouteController;
@@ -52,6 +54,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/transportista/vehiculos/registrar', [VehicleController::class, 'create'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.vehicles.create');
+    Route::get('/transportista/documentos', [TransporterDocumentController::class, 'index'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.documents.index');
+    Route::post('/transportista/documentos', [TransporterDocumentController::class, 'store'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.documents.store');
     Route::post('/transportista/rutas', [TransportRouteController::class, 'store'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.store');
@@ -135,6 +143,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/administrador/vehiculos/{vehicle}/rechazar', [VehicleController::class, 'reject'])
         ->middleware(['verified', 'role:administrador'])
         ->name('admin.vehicles.reject');
+    Route::get('/administrador/transaction-logs', [TransactionLogController::class, 'index'])
+        ->middleware(['verified', 'role:administrador'])
+        ->name('admin.transaction-logs.index');
 });
 
 require __DIR__.'/auth.php';

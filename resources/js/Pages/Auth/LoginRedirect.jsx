@@ -16,55 +16,69 @@ export default function LoginRedirect({ redirectTo, roleName, dashboardLabel }) 
         <>
             <Head title="Preparando acceso" />
 
-            <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f4efdf_0%,#edf4ea_48%,#f8f9f5_100%)] text-[#27423a]">
-                <div className="animate-drift-soft absolute left-[-5rem] top-[-4rem] h-52 w-52 rounded-full bg-[#ffd773]/40 blur-3xl" />
-                <div className="animate-drift-soft absolute bottom-[-6rem] right-[-3rem] h-64 w-64 rounded-full bg-[#80b57e]/28 blur-3xl [animation-delay:1.6s]" />
+            <div className="relative min-h-screen bg-slate-50 flex items-center justify-center p-6">
+                <div className="w-full max-w-md bg-white border border-slate-200/60 rounded-2xl shadow-xl p-8 sm:p-12 text-center relative overflow-hidden">
+                    
+                    {/* Efecto de luz superior muy sutil */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-24 bg-emerald-400/10 blur-2xl rounded-full pointer-events-none"></div>
 
-                <div className="relative flex min-h-screen items-center justify-center px-6 py-10">
-                    <div className="animate-scale-in-soft w-full max-w-[520px] rounded-[2.2rem] border border-white/80 bg-white/82 p-8 text-center shadow-[0_36px_90px_-54px_rgba(30,55,44,0.46)] backdrop-blur sm:p-10">
-                        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-[2rem] bg-[linear-gradient(180deg,#ffffff_0%,#f3f7ee_100%)] shadow-[0_22px_44px_-32px_rgba(33,62,49,0.46)]">
+                    <div className="relative z-10">
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 shadow-sm mb-8">
                             <img
                                 src="/assets/landing/logo_flety.png"
                                 alt="Flety"
-                                className="animate-float-soft h-12 w-auto"
+                                className="h-10 w-auto animate-pulse"
                             />
                         </div>
 
-                        <div className="mt-8 space-y-3">
-                            <p className="animate-fade-up text-xs font-semibold uppercase tracking-[0.32em] text-[#5e835f]">
-                                Acceso autorizado
+                        <div className="space-y-2 mb-10">
+                            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">
+                                Acceso Autorizado
                             </p>
-                            <h1 className="animate-fade-up stagger-1 text-[2.2rem] font-semibold tracking-[-0.05em] text-[#203029] sm:text-[2.6rem]">
+                            <h1 className="text-3xl font-black tracking-tight text-slate-900">
                                 Preparando tu panel
                             </h1>
-                            <p className="animate-fade-up stagger-2 text-[1.02rem] leading-7 text-[#63706a]">
-                                Estamos cargando la vista correspondiente para{' '}
-                                <span className="font-semibold text-[#2f6d3e]">
+                            <p className="text-base text-slate-500 leading-relaxed max-w-sm mx-auto">
+                                Cargando entorno seguro para{' '}
+                                <span className="font-bold text-slate-800">
                                     {roleName}
                                 </span>
                                 .
                             </p>
                         </div>
 
-                        <div className="animate-fade-up stagger-3 mt-8 rounded-[1.7rem] border border-[#e6ebdf] bg-[linear-gradient(180deg,#f9fbf7_0%,#f0f4ea_100%)] p-5 text-left">
-                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#74816f]">
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-5 text-left mb-6">
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
                                 Destino
                             </p>
-                            <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-[#234238]">
+                            <p className="text-lg font-bold text-slate-800">
                                 {dashboardLabel}
                             </p>
 
-                            <div className="mt-5 h-3 overflow-hidden rounded-full bg-[#dde7d7]">
-                                <div className="animate-glow-soft h-full w-[68%] rounded-full bg-[linear-gradient(90deg,#7aac72_0%,#4f9547_52%,#2f6d3e_100%)]" />
+                            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                                {/* Barra que se llena progresivamente simulando la carga */}
+                                <div className="h-full rounded-full bg-emerald-500 transition-all duration-[1400ms] ease-out w-full" style={{ animation: 'progress-load 1.4s ease-out forwards' }} />
                             </div>
                         </div>
 
-                        <div className="animate-fade-up stagger-4 mt-6 flex items-center justify-center gap-3 text-sm text-[#70807a]">
-                            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[#5d9a54]" />
-                            Redirigiendo...
+                        <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
+                            <svg className="w-4 h-4 text-emerald-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Conectando...
                         </div>
                     </div>
                 </div>
+
+                <style dangerouslySetInnerHTML={{__html: `
+                    @keyframes progress-load {
+                        0% { width: 0%; }
+                        20% { width: 30%; }
+                        60% { width: 70%; }
+                        100% { width: 100%; }
+                    }
+                `}} />
             </div>
         </>
     );

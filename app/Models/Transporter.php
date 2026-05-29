@@ -20,10 +20,25 @@ class Transporter extends Model
     protected $fillable = [
         'user_id',
         'identity_document',
+        'identity_document_expedition_date',
+        'identity_document_expedition_place',
         'driver_license',
+        'driver_license_category',
+        'driver_license_expiration_date',
         'validation_status',
         'rating_average',
+        'payment_methods', // <-- 1. Agregamos el campo aquí
     ];
+
+    // <-- 2. Agregamos este bloque para manejar el JSON automáticamente y las fechas
+    protected function casts(): array
+    {
+        return [
+            'identity_document_expedition_date' => 'date',
+            'driver_license_expiration_date' => 'date',
+            'payment_methods' => 'array',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -45,7 +60,7 @@ class Transporter extends Model
         return $this->hasMany(TransportRoute::class);
     }
 
-    public function services(): HasMany
+    public function services(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
     {
         return $this->hasManyThrough(
             Service::class,

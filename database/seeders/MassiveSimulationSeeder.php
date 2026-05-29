@@ -58,8 +58,8 @@ class MassiveSimulationSeeder extends Seeder
 
         $productTypes = ['Papa', 'Platano', 'Yuca', 'Cafe', 'Maiz', 'Frijol', 'Hortalizas', 'Cebolla', 'Tomate'];
 
-        $producersCount = 250;
-        $transportersCount = 250;
+        $producersCount = 500;
+        $transportersCount = 500;
         
         $producers = [];
         $transporters = [];
@@ -103,12 +103,18 @@ class MassiveSimulationSeeder extends Seeder
 
             $transporterStatus = $faker->randomElement(['pending', 'approved', 'approved', 'approved', 'rejected']);
             
+            $methods = collect(['Efectivo', 'Nequi', 'Daviplata', 'Bancolombia'])
+                ->random(rand(1, 3))
+                ->values()
+                ->toArray();
+
             $transporter = Transporter::create([
                 'user_id' => $user->id,
                 'identity_document' => $faker->unique()->randomNumber(9, true),
                 'driver_license' => strtoupper($faker->bothify('???###')),
                 'validation_status' => $transporterStatus,
                 'rating_average' => $faker->randomFloat(2, 3, 5),
+                'payment_methods' => $methods,
             ]);
 
             $transporters[] = $transporter;
@@ -202,6 +208,26 @@ class MassiveSimulationSeeder extends Seeder
                                     'status' => Service::STATUS_CONFIRMED,
                                     'confirmed_at' => $departureAt->copy()->subHours($faker->numberBetween(2, 24)),
                                     'agreed_amount' => $transportReq->estimated_cost,
+                                ]);
+                            }
+                        } else if ($routeStatus === TransportRoute::STATUS_PUBLISHED && $faker->boolean(70)) {
+                            // Seed some pending/rejected requests for future routes
+                            $requestCount = $faker->numberBetween(1, 2); 
+                            for ($req = 0; $req < $requestCount; $req++) {
+                                $cargoWeight = $faker->numberBetween(500, 2000);
+                                $producer = $faker->randomElement($producers);
+                                $reqStatus = $faker->randomElement([TransportRequest::STATUS_PENDING, TransportRequest::STATUS_REJECTED]);
+
+                                TransportRequest::create([
+                                    'transport_route_id' => $route->id,
+                                    'producer_id' => $producer->id,
+                                    'cargo_weight_kg' => $cargoWeight,
+                                    'product_type' => $faker->randomElement($productTypes),
+                                    'product_category' => 'Agricola',
+                                    'delivery_destination' => $destCity['name'] . ', ' . $faker->streetAddress,
+                                    'estimated_cost' => $cargoWeight * $faker->numberBetween(100, 300),
+                                    'requested_at' => Carbon::now()->subHours($faker->numberBetween(1, 48)),
+                                    'status' => $reqStatus,
                                 ]);
                             }
                         }

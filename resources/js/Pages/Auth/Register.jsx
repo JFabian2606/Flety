@@ -170,7 +170,7 @@ export default function Register({ roles, selectedRole }) {
                 </div>
 
                 {isTransporter ? (
-                    <section className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-5">
+                    <section className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
                         <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
                                 Perfil de transportista
@@ -545,7 +545,7 @@ export default function Register({ roles, selectedRole }) {
                 ) : null}
 
                 {isProducer ? (
-                    <section className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-5">
+                    <section className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
                         <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
                                 Perfil de productor
