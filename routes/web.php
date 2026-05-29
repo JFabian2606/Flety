@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthLoadingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleRedirectController;
+use App\Http\Controllers\TransporterDocumentController;
 use App\Http\Controllers\TransporterVerificationController;
 use App\Http\Controllers\TransportRequestController;
 use App\Http\Controllers\TransportRouteController;
@@ -52,6 +53,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/transportista/vehiculos/registrar', [VehicleController::class, 'create'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.vehicles.create');
+    Route::get('/transportista/documentos', [TransporterDocumentController::class, 'index'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.documents.index');
+    Route::post('/transportista/documentos', [TransporterDocumentController::class, 'store'])
+        ->middleware(['verified', 'role:transportista'])
+        ->name('transporter.documents.store');
     Route::post('/transportista/rutas', [TransportRouteController::class, 'store'])
         ->middleware(['verified', 'role:transportista'])
         ->name('transporter.routes.store');

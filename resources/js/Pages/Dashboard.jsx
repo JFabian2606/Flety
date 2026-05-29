@@ -312,15 +312,16 @@ function TransporterOperations({
                                             </p>
                                         </div>
                                     </div>
-                                    <span
-                                        className={`inline-flex rounded-xl px-4 py-2 text-sm font-medium backdrop-blur-sm border ${
+                                    <Link
+                                        href={route('transporter.documents.index')}
+                                        className={`interactive-lift inline-flex rounded-xl px-4 py-2 text-sm font-medium backdrop-blur-sm border transition ${
                                             isVerified
-                                                ? 'bg-emerald-500/20 border-emerald-400/30 text-[#c8f2bd]'
-                                                : 'bg-white/10 border-white/20 text-white/90'
+                                                ? 'bg-emerald-500/20 border-emerald-400/30 text-[#c8f2bd] hover:bg-emerald-500/30'
+                                                : 'bg-white/10 border-white/20 text-white/90 hover:bg-white/20'
                                         }`}
                                     >
-                                        {isVerified ? 'Verificado' : 'En revision'}
-                                    </span>
+                                        {isVerified ? '✓ Verificado' : '⚠ En revisión (Validar documentos)'}
+                                    </Link>
                                 </div>
                             </div>
                         </div>
