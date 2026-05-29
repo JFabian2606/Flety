@@ -27,13 +27,16 @@ class Transporter extends Model
         'driver_license_expiration_date',
         'validation_status',
         'rating_average',
+        'payment_methods', // <-- 1. Agregamos el campo aquí
     ];
 
+    // <-- 2. Agregamos este bloque para manejar el JSON automáticamente y las fechas
     protected function casts(): array
     {
         return [
             'identity_document_expedition_date' => 'date',
             'driver_license_expiration_date' => 'date',
+            'payment_methods' => 'array',
         ];
     }
 

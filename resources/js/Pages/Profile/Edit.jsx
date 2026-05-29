@@ -3,8 +3,9 @@ import { Head } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import UpdatePaymentMethodsForm from './Partials/UpdatePaymentMethodsForm'; // <-- 1. Importamos el nuevo formulario
 
-export default function Edit({ mustVerifyEmail, status }) {
+export default function Edit({ mustVerifyEmail, status, transporter }) { // <-- 2. Recibimos al transportista
     return (
         <AuthenticatedLayout
             header={
@@ -30,11 +31,21 @@ export default function Edit({ mustVerifyEmail, status }) {
                         />
                     </div>
 
-                    <div className="animate-panel-rise stagger-1 rounded-2xl border border-[#dfe8dc] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-8">
+                    {/* NUEVA SECCIÓN: Solo se muestra si el usuario es transportista */}
+                    {transporter && (
+                        <div className="animate-panel-rise stagger-1 rounded-2xl border border-[#dfe8dc] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-8">
+                            <UpdatePaymentMethodsForm 
+                                transporter={transporter} 
+                                className="max-w-xl" 
+                            />
+                        </div>
+                    )}
+
+                    <div className="animate-panel-rise stagger-2 rounded-2xl border border-[#dfe8dc] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-8">
                         <UpdatePasswordForm className="max-w-xl" />
                     </div>
 
-                    <div className="animate-panel-rise stagger-2 rounded-2xl border border-[#dfe8dc] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-8">
+                    <div className="animate-panel-rise stagger-3 rounded-2xl border border-[#dfe8dc] bg-white p-4 shadow-[0_18px_42px_-34px_rgba(31,74,49,0.35)] sm:p-8">
                         <DeleteUserForm className="max-w-xl" />
                     </div>
                 </div>
